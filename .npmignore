@@ -1,0 +1,4 @@
+*.tgz
+examples
+src
+tsconfig.json
