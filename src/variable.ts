@@ -1,21 +1,59 @@
 import { mod, RawModel } from './module'
 import { getBoundType } from './bounds'
-import { RawVariableType } from './enums'
+import { RawVariableStatus, RawVariableType } from './enums'
 
-export type VariableType = 'c' | 'b' | 'i'
+export type VariableType =
+  | 'c'
+  | 'b'
+  | 'i'
+  | 'cont'
+  | 'continuous'
+  | 'bin'
+  | 'binary'
+  | 'int'
+  | 'integer'
+
+const VARIABLETYPE2RAW = new Map<VariableType | undefined, RawVariableType>([
+  [undefined, RawVariableType.CONTINUOUS],
+  ['c', RawVariableType.CONTINUOUS],
+  ['cont', RawVariableType.CONTINUOUS],
+  ['continuous', RawVariableType.CONTINUOUS],
+  ['i', RawVariableType.INTEGER],
+  ['int', RawVariableType.INTEGER],
+  ['integer', RawVariableType.INTEGER],
+  ['b', RawVariableType.BINARY],
+  ['bin', RawVariableType.BINARY],
+  ['binary', RawVariableType.BINARY],
+])
+
+const RAW2VARIABLETYPE = new Map(Array.from(VARIABLETYPE2RAW.entries(), ([k, v]) => [v, k]))
 
 function getVariableType(type?: VariableType): RawVariableType {
-  if (type === undefined || type === 'c') return RawVariableType.CONTINUOUS
-  if (type === 'i') return RawVariableType.INTEGER
-  if (type === 'b') return RawVariableType.BINARY
-  throw new Error(`unknown variable type '${type}'`)
+  const res = VARIABLETYPE2RAW.get(type)
+  if (res === undefined) throw new Error(`unknown variable type '${type}'`)
+  return res
 }
+
+export type VariableStatus = 'basic' | 'lower-bound' | 'upper-bound' | 'free' | 'fixed'
+
+export const VARIABLESTATUS2RAW = new Map<VariableStatus, RawVariableStatus>([
+  ['basic', RawVariableStatus.BASIC],
+  ['lower-bound', RawVariableStatus.LB],
+  ['upper-bound', RawVariableStatus.UB],
+  ['free', RawVariableStatus.FREE],
+  ['fixed', RawVariableStatus.FIXED],
+])
+
+export const RAW2VARIABLESTATUS = new Map(
+  Array.from(VARIABLESTATUS2RAW.entries(), ([k, v]) => [v, k])
+)
 
 export interface VariableProperties {
   obj?: number
   lb?: number
   ub?: number
   type?: VariableType
+  name?: string
 }
 
 export class Variable {
@@ -29,10 +67,11 @@ export class Variable {
     this._idx = idx
 
     if (props === undefined) return
-    const { obj, lb, ub, type } = props
+    const { obj, lb, ub, type, name } = props
     if (obj !== undefined) this.obj = obj
     this.setBounds(lb, ub)
-    if (type !== undefined) this.type = getVariableType(type)
+    if (type !== undefined) this.type = type
+    if (name !== undefined) this.name = name
   }
 
   private setBounds(lb?: number, ub?: number) {
@@ -47,6 +86,19 @@ export class Variable {
     this.setBounds(lb, ub)
   }
 
+  set name(name: string) {
+    const strLen = mod.lengthBytesUTF8(name) + 1
+    const namePtr = mod._malloc(strLen)
+    mod.stringToUTF8(name, namePtr, strLen)
+    mod._glp_set_col_name(this._model, this._idx, namePtr)
+    mod._free(namePtr)
+  }
+
+  get name(): string {
+    const namePtr = mod._glp_get_col_name(this._model, this._idx)
+    return mod.UTF8ToString(namePtr)
+  }
+
   set lb(lb: number | undefined) {
     this.setBounds(lb, this.ub)
   }
@@ -57,12 +109,10 @@ export class Variable {
 
   get lb(): number | undefined {
     return this._lb
-    // return mod._glp_get_col_lb(this._model, this._idx)
   }
 
   get ub(): number | undefined {
     return this._ub
-    // return mod._glp_get_col_ub(this._model, this._idx)
   }
 
   get obj(): number {
@@ -74,8 +124,12 @@ export class Variable {
     mod._glp_set_obj_coef(this._model, this._idx, obj)
   }
 
-  set type(type: RawVariableType) {
-    mod._glp_set_col_kind(this._model, this._idx, type)
+  set type(type: VariableType) {
+    mod._glp_set_col_kind(this._model, this._idx, getVariableType(type))
+  }
+
+  get type(): VariableType {
+    return <VariableType>RAW2VARIABLETYPE.get(mod._glp_get_col_kind(this._model, this._idx))
   }
 
   get value(): number {
@@ -84,6 +138,10 @@ export class Variable {
 
   get dual(): number {
     return mod._glp_get_col_dual(this._model, this._idx)
+  }
+
+  get status(): VariableStatus {
+    return <VariableStatus>RAW2VARIABLESTATUS.get(mod._glp_get_col_stat(this._model, this._idx))
   }
 }
 

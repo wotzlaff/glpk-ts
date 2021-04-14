@@ -1,9 +1,28 @@
-import { RawObjectiveDirection, RawMessageLevel, RawMethod } from './enums'
+import { RawObjectiveDirection, RawMessageLevel, RawMethod, RawStatus } from './enums'
 
-import { loadModule, mod, RawModel } from './module'
+import { mod, RawModel } from './module'
 import Variable, { VariableProperties } from './variable'
 import Constraint, { ConstraintProperties } from './constraint'
 import { SMCPPtr } from 'glpk-wasm'
+
+export type Status =
+  | 'optimal'
+  | 'feasible'
+  | 'infeasible'
+  | 'no_feasible'
+  | 'unbounded'
+  | 'undefined'
+
+const STATUS2RAW = new Map<Status, RawStatus>([
+  ['optimal', RawStatus.OPTIMAL],
+  ['feasible', RawStatus.FEASIBLE],
+  ['infeasible', RawStatus.INFEASIBLE],
+  ['no_feasible', RawStatus.NO_FEASIBLE],
+  ['unbounded', RawStatus.UNBOUNDED],
+  ['undefined', RawStatus.UNDEFINED],
+])
+
+const RAW2STATUS = new Map(Array.from(STATUS2RAW.entries(), ([k, v]) => [v, k]))
 
 export namespace Simplex {
   export type Method = 'primal' | 'dual' | 'dual_primal'
@@ -74,12 +93,35 @@ export class Model {
     }
   }
 
+  get value(): number {
+    return mod._glp_get_obj_val(this._model)
+  }
+
   get numVars(): number {
     return mod._glp_get_num_cols(this._model)
   }
 
   get numConstrs(): number {
     return mod._glp_get_num_rows(this._model)
+  }
+
+  get numNZs(): number {
+    return mod._glp_get_num_nz(this._model)
+  }
+
+  get status(): Status {
+    const stat = <RawStatus>mod._glp_get_status(this._model)
+    return <Status>RAW2STATUS.get(stat)
+  }
+
+  get statusPrimal(): Status {
+    const stat = <RawStatus>mod._glp_get_prim_stat(this._model)
+    return <Status>RAW2STATUS.get(stat)
+  }
+
+  get statusDual(): Status {
+    const stat = <RawStatus>mod._glp_get_dual_stat(this._model)
+    return <Status>RAW2STATUS.get(stat)
   }
 
   addVars(vars: number, props?: VariableProperties): Variable[]
@@ -111,7 +153,12 @@ export class Model {
     const idx0 = mod._glp_add_cols(this._model, n)
     const vars = Array.from(
       Array(n).keys(),
-      offset => new Variable(this._model, idx0 + offset, props)
+      offset =>
+        new Variable(
+          this._model,
+          idx0 + offset,
+          props && props.name ? { ...props, name: `${props.name}_${offset}` } : props
+        )
     )
     this._vars = this._vars.concat(vars)
     return vars
@@ -146,7 +193,12 @@ export class Model {
     const idx0 = mod._glp_add_rows(this._model, n)
     const constrs = Array.from(
       Array(n).keys(),
-      offset => new Constraint(this._model, idx0 + offset, props)
+      offset =>
+        new Constraint(
+          this._model,
+          idx0 + offset,
+          props && props.name ? { ...props, name: `${props.name}_${offset}` } : props
+        )
     )
     this._constrs = this._constrs.concat(constrs)
     return constrs

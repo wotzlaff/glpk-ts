@@ -1,6 +1,6 @@
 import { mod, RawModel } from './module'
 import { getBoundType } from './bounds'
-import Variable from './variable'
+import Variable, { VariableStatus, RAW2VARIABLESTATUS } from './variable'
 
 export type CoefficientList = Array<[Variable, number]> | Map<Variable, number>
 
@@ -8,6 +8,7 @@ export interface ConstraintProperties {
   lb?: number
   ub?: number
   coeffs?: CoefficientList
+  name?: string
 }
 
 export class Constraint {
@@ -24,12 +25,27 @@ export class Constraint {
     this._idx = idx
     this._coeffs = new Map()
     if (!props) return
-    this.setBounds(props.lb, props.ub)
-    if (props.coeffs !== undefined) this.addCollection(props.coeffs)
+    const { lb, ub, coeffs, name } = props
+    this.setBounds(lb, ub)
+    if (coeffs !== undefined) this.addCollection(coeffs)
+    if (name !== undefined) this.name = name
   }
 
   get id() {
     return this._idx
+  }
+
+  set name(name: string) {
+    const strLen = mod.lengthBytesUTF8(name) + 1
+    const namePtr = mod._malloc(strLen)
+    mod.stringToUTF8(name, namePtr, strLen)
+    mod._glp_set_row_name(this._model, this._idx, namePtr)
+    mod._free(namePtr)
+  }
+
+  get name(): string {
+    const namePtr = mod._glp_get_row_name(this._model, this._idx)
+    return mod.UTF8ToString(namePtr)
   }
 
   setBounds(lb?: number, ub?: number) {
@@ -50,6 +66,14 @@ export class Constraint {
 
   set ub(ub: number | undefined) {
     this.setBounds(this.lb, ub)
+  }
+
+  get lb(): number | undefined {
+    return this._lb
+  }
+
+  get ub(): number | undefined {
+    return this._ub
   }
 
   add(v: CoefficientList): Constraint
@@ -125,6 +149,10 @@ export class Constraint {
 
   get dual(): number {
     return mod._glp_get_row_dual(this._model, this._idx)
+  }
+
+  get status(): VariableStatus {
+    return <VariableStatus>RAW2VARIABLESTATUS.get(mod._glp_get_row_stat(this._model, this._idx))
   }
 }
 export default Constraint
