@@ -1,0 +1,40 @@
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js"
+      integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg=="
+      crossorigin="anonymous"
+    ></script>
+    <script>
+      require.config({
+        paths: {
+          'glpk-wasm': 'https://unpkg.com/glpk-wasm/dist/index',
+          'glpk-ts': 'https://unpkg.com/glpk-ts/dist/index',
+        },
+      })
+      require(['glpk-ts'], GLPK => {
+        GLPK.loadModule('https://unpkg.com/glpk-wasm/dist/libglpk.wasm').then(() => {
+          const m = new GLPK.Model()
+          const [x, y] = m.addVars(2, { lb: 0.0, obj: -1.0 })
+          m.addConstr({
+            ub: 1.0,
+            coeffs: [
+              [x, 1.0],
+              [y, 1.0],
+            ],
+          })
+
+          m.simplex({ msgLevel: 'on' })
+
+          const out = document.getElementById('output')
+          out.innerHTML += m.toModelLP()
+          out.innerHTML += `\n\nSolution: x = ${x.value}, y = ${y.value}`
+        })
+      })
+    </script>
+  </head>
+  <body>
+    <pre id="output"></pre>
+  </body>
+</html>
