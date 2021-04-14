@@ -71,3 +71,10 @@ export enum RawRatioTest {
   HARRIS = 0x22,
   FLIPFLOP = 0x33,
 }
+
+export enum RawOrderingAlgorithm {
+  NONE = 0,
+  QMD = 1,
+  AMD = 2,
+  SYMAMD = 3,
+}

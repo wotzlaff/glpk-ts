@@ -1,9 +1,15 @@
-import { RawObjectiveDirection, RawMessageLevel, RawMethod, RawStatus } from './enums'
+import {
+  RawObjectiveDirection,
+  RawMessageLevel,
+  RawMethod,
+  RawStatus,
+  RawOrderingAlgorithm,
+} from './enums'
 
 import { mod, RawModel } from './module'
 import Variable, { VariableProperties } from './variable'
 import Constraint, { ConstraintProperties } from './constraint'
-import { SMCPPtr } from 'glpk-wasm'
+import { IPTCPPtr, SMCPPtr } from 'glpk-wasm'
 
 export type Status =
   | 'optimal'
@@ -12,6 +18,8 @@ export type Status =
   | 'no_feasible'
   | 'unbounded'
   | 'undefined'
+
+export type InteriorStatus = 'undefined' | 'optimal' | 'infeasible' | 'no_feasible'
 
 const STATUS2RAW = new Map<Status, RawStatus>([
   ['optimal', RawStatus.OPTIMAL],
@@ -67,6 +75,38 @@ export class Simplex {
   }
 }
 
+export namespace Interior {
+  export type OrderingAlgorithm = 'none' | 'qmd' | 'amd' | 'symamd'
+
+  export interface Options {
+    msgLevel?: Simplex.MessageLevel
+    ordering?: OrderingAlgorithm
+  }
+}
+
+class Interior {
+  static getOrderingAlgorithm(method: Interior.OrderingAlgorithm): RawOrderingAlgorithm {
+    const res = {
+      none: RawOrderingAlgorithm.NONE,
+      qmd: RawOrderingAlgorithm.QMD,
+      amd: RawOrderingAlgorithm.AMD,
+      symamd: RawOrderingAlgorithm.SYMAMD,
+    }[method]
+    if (res === undefined) throw new Error(`unknown ordering '${method}'`)
+    return res
+  }
+
+  static toStruct(opts: Interior.Options) {
+    const param = mod._malloc(392)
+    mod._glp_init_iptcp(param)
+    if (opts.msgLevel !== undefined)
+      mod.setValue(param, Simplex.getMessageLevel(opts.msgLevel), 'i32')
+    if (opts.ordering !== undefined)
+      mod.setValue(<number>param + 4, Interior.getOrderingAlgorithm(opts.ordering), 'i32')
+    return param
+  }
+}
+
 export interface ModelProperties {
   name?: string
   sense?: 'min' | 'max'
@@ -107,6 +147,14 @@ export class Model {
 
   get numNZs(): number {
     return mod._glp_get_num_nz(this._model)
+  }
+
+  get numBinary(): number {
+    return mod._glp_get_num_bin(this._model)
+  }
+
+  get numInteger(): number {
+    return mod._glp_get_num_int(this._model)
   }
 
   get status(): Status {
@@ -232,11 +280,20 @@ export class Model {
     return mod.FS.readFile(fname, { encoding: 'utf8' })
   }
 
-  simplex(opts?: Simplex.Options): void {
+  simplex(opts?: Simplex.Options): Status {
     this.update()
     const param = opts === undefined ? undefined : Simplex.toStruct(opts)
     mod._glp_simplex(this._model, <SMCPPtr>param)
     if (param !== undefined) mod._free(param)
+    return this.status
+  }
+
+  interior(opts?: Interior.Options): InteriorStatus {
+    this.update()
+    const param = opts === undefined ? undefined : Interior.toStruct(opts)
+    mod._glp_interior(this._model, <IPTCPPtr>param)
+    if (param !== undefined) mod._free(param)
+    return <InteriorStatus>RAW2STATUS.get(mod._glp_ipt_status(this._model))
   }
 }
 
