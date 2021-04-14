@@ -188,9 +188,4 @@ export class Model {
   }
 }
 
-export async function createModel(props?: ModelProperties) {
-  await loadModule()
-  return new Model(props)
-}
-
 export default Model

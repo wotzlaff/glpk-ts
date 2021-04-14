@@ -1,9 +1,20 @@
 import glpkWasm, { GLPKModule } from 'glpk-wasm'
 
-export const modPromise: Promise<GLPKModule> = glpkWasm()
+export let modPromise: Promise<GLPKModule>
 export let mod: GLPKModule
 
-export async function loadModule(): Promise<GLPKModule> {
+export async function loadModule(wasmLocation?: string): Promise<GLPKModule> {
+  if (modPromise === undefined) {
+    modPromise =
+      wasmLocation === undefined
+        ? glpkWasm()
+        : // @ts-ignore
+          glpkWasm({
+            locateFile() {
+              return wasmLocation
+            },
+          })
+  }
   mod = await modPromise
   return mod
 }
