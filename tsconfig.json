@@ -5,9 +5,9 @@
     "outDir": "./dist",
     "sourceMap": true,
     "declaration": true,
-    "module": "commonjs",
-    "lib": ["es6"],
-    "target": "es5",
+    "moduleResolution": "Node",
+    "module": "UMD",
+    "target": "ES6",
     "downlevelIteration": true,
     "strict": true,
     "esModuleInterop": true
