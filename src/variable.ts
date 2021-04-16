@@ -1,4 +1,5 @@
 import { mod, RawModel } from './module'
+import { Model } from './model'
 import { getBoundType } from './bounds'
 import { RawVariableStatus, RawVariableType } from './enums'
 
@@ -57,13 +58,17 @@ export interface VariableProperties {
 }
 
 export class Variable {
-  _model: RawModel
+  model: Model
   _idx: number
   _lb: number | undefined = 0.0
   _ub: number | undefined = 0.0
 
-  constructor(model: RawModel, idx: number, props?: VariableProperties) {
-    this._model = model
+  private get ptr(): RawModel {
+    return this.model.ptr
+  }
+
+  constructor(model: Model, idx: number, props?: VariableProperties) {
+    this.model = model
     this._idx = idx
 
     if (props === undefined) return
@@ -79,7 +84,7 @@ export class Variable {
     this._lb = lb
     this._ub = ub
     const boundType = getBoundType(lb, ub)
-    mod._glp_set_col_bnds(this._model, this._idx, boundType, lb || 0.0, ub || 0.0)
+    mod._glp_set_col_bnds(this.ptr, this._idx, boundType, lb || 0.0, ub || 0.0)
   }
 
   set bounds([lb, ub]: [number | undefined, number | undefined]) {
@@ -90,12 +95,12 @@ export class Variable {
     const strLen = mod.lengthBytesUTF8(name) + 1
     const namePtr = mod._malloc(strLen)
     mod.stringToUTF8(name, namePtr, strLen)
-    mod._glp_set_col_name(this._model, this._idx, namePtr)
+    mod._glp_set_col_name(this.ptr, this._idx, namePtr)
     mod._free(namePtr)
   }
 
   get name(): string {
-    const namePtr = mod._glp_get_col_name(this._model, this._idx)
+    const namePtr = mod._glp_get_col_name(this.ptr, this._idx)
     return mod.UTF8ToString(namePtr)
   }
 
@@ -116,32 +121,32 @@ export class Variable {
   }
 
   get obj(): number {
-    return mod._glp_get_obj_coef(this._model, this._idx)
+    return mod._glp_get_obj_coef(this.ptr, this._idx)
   }
 
   set obj(obj: number) {
     if (typeof obj !== 'number') throw new Error('obj should be a number')
-    mod._glp_set_obj_coef(this._model, this._idx, obj)
+    mod._glp_set_obj_coef(this.ptr, this._idx, obj)
   }
 
   set type(type: VariableType) {
-    mod._glp_set_col_kind(this._model, this._idx, getVariableType(type))
+    mod._glp_set_col_kind(this.ptr, this._idx, getVariableType(type))
   }
 
   get type(): VariableType {
-    return <VariableType>RAW2VARIABLETYPE.get(mod._glp_get_col_kind(this._model, this._idx))
+    return <VariableType>RAW2VARIABLETYPE.get(mod._glp_get_col_kind(this.ptr, this._idx))
   }
 
   get value(): number {
-    return mod._glp_get_col_prim(this._model, this._idx)
+    return mod._glp_get_col_prim(this.ptr, this._idx)
   }
 
   get dual(): number {
-    return mod._glp_get_col_dual(this._model, this._idx)
+    return mod._glp_get_col_dual(this.ptr, this._idx)
   }
 
   get status(): VariableStatus {
-    return <VariableStatus>RAW2VARIABLESTATUS.get(mod._glp_get_col_stat(this._model, this._idx))
+    return <VariableStatus>RAW2VARIABLESTATUS.get(mod._glp_get_col_stat(this.ptr, this._idx))
   }
 }
 

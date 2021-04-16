@@ -64,11 +64,10 @@ export class Simplex {
     return res
   }
 
-  static toStruct(opts: Simplex.Options) {
+  static toStruct(opts: Simplex.Options): SMCPPtr {
     const param = mod._malloc(352)
     mod._glp_init_smcp(param)
-    if (opts.msgLevel !== undefined)
-      mod.setValue(param, Simplex.getMessageLevel(opts.msgLevel), 'i32')
+    mod.setValue(param, Simplex.getMessageLevel(opts.msgLevel || 'off'), 'i32')
     if (opts.method !== undefined)
       mod.setValue(<number>param + 4, Simplex.getMethod(opts.method), 'i32')
     return param
@@ -96,11 +95,10 @@ class Interior {
     return res
   }
 
-  static toStruct(opts: Interior.Options) {
+  static toStruct(opts: Interior.Options): IPTCPPtr {
     const param = mod._malloc(392)
     mod._glp_init_iptcp(param)
-    if (opts.msgLevel !== undefined)
-      mod.setValue(param, Simplex.getMessageLevel(opts.msgLevel), 'i32')
+    mod.setValue(param, Simplex.getMessageLevel(opts.msgLevel || 'off'), 'i32')
     if (opts.ordering !== undefined)
       mod.setValue(<number>param + 4, Interior.getOrderingAlgorithm(opts.ordering), 'i32')
     return param
@@ -113,7 +111,7 @@ export interface ModelProperties {
 }
 
 export class Model {
-  private _model: RawModel = mod._glp_create_prob()
+  ptr: RawModel = mod._glp_create_prob()
   private _vars: Variable[] = []
   private _constrs: Constraint[] = []
 
@@ -125,7 +123,7 @@ export class Model {
       const maxLen = 4 * name.length + 1
       const namePtr = mod._malloc(maxLen)
       mod.stringToUTF8(name, namePtr, maxLen)
-      mod._glp_set_prob_name(this._model, namePtr)
+      mod._glp_set_prob_name(this.ptr, namePtr)
       mod._free(namePtr)
     }
     if (sense !== undefined) {
@@ -134,41 +132,41 @@ export class Model {
   }
 
   get value(): number {
-    return mod._glp_get_obj_val(this._model)
+    return mod._glp_get_obj_val(this.ptr)
   }
 
   get numVars(): number {
-    return mod._glp_get_num_cols(this._model)
+    return mod._glp_get_num_cols(this.ptr)
   }
 
   get numConstrs(): number {
-    return mod._glp_get_num_rows(this._model)
+    return mod._glp_get_num_rows(this.ptr)
   }
 
   get numNZs(): number {
-    return mod._glp_get_num_nz(this._model)
+    return mod._glp_get_num_nz(this.ptr)
   }
 
   get numBinary(): number {
-    return mod._glp_get_num_bin(this._model)
+    return mod._glp_get_num_bin(this.ptr)
   }
 
   get numInteger(): number {
-    return mod._glp_get_num_int(this._model)
+    return mod._glp_get_num_int(this.ptr)
   }
 
   get status(): Status {
-    const stat = <RawStatus>mod._glp_get_status(this._model)
+    const stat = <RawStatus>mod._glp_get_status(this.ptr)
     return <Status>RAW2STATUS.get(stat)
   }
 
   get statusPrimal(): Status {
-    const stat = <RawStatus>mod._glp_get_prim_stat(this._model)
+    const stat = <RawStatus>mod._glp_get_prim_stat(this.ptr)
     return <Status>RAW2STATUS.get(stat)
   }
 
   get statusDual(): Status {
-    const stat = <RawStatus>mod._glp_get_dual_stat(this._model)
+    const stat = <RawStatus>mod._glp_get_dual_stat(this.ptr)
     return <Status>RAW2STATUS.get(stat)
   }
 
@@ -184,26 +182,26 @@ export class Model {
   }
 
   addVar(props?: VariableProperties): Variable {
-    const idx0 = mod._glp_add_cols(this._model, 1)
-    const v = new Variable(this._model, idx0, props)
+    const idx0 = mod._glp_add_cols(this.ptr, 1)
+    const v = new Variable(this, idx0, props)
     this._vars.push(v)
     return v
   }
 
   private addVarsByProperties(props: VariableProperties[]): Variable[] {
-    const idx0 = mod._glp_add_cols(this._model, props.length)
-    const vars = props.map((v, offset) => new Variable(this._model, idx0 + offset, v))
+    const idx0 = mod._glp_add_cols(this.ptr, props.length)
+    const vars = props.map((v, offset) => new Variable(this, idx0 + offset, v))
     this._vars = this._vars.concat(vars)
     return vars
   }
 
   private addVarsByCount(n: number, props?: VariableProperties): Variable[] {
-    const idx0 = mod._glp_add_cols(this._model, n)
+    const idx0 = mod._glp_add_cols(this.ptr, n)
     const vars = Array.from(
       Array(n).keys(),
       offset =>
         new Variable(
-          this._model,
+          this,
           idx0 + offset,
           props && props.name ? { ...props, name: `${props.name}_${offset}` } : props
         )
@@ -224,26 +222,26 @@ export class Model {
   }
 
   addConstr(props?: ConstraintProperties): Constraint {
-    const idx0 = mod._glp_add_rows(this._model, 1)
-    const c = new Constraint(this._model, idx0, props)
+    const idx0 = mod._glp_add_rows(this.ptr, 1)
+    const c = new Constraint(this, idx0, props)
     this._constrs.push(c)
     return c
   }
 
   private addConstrsByProperties(props: ConstraintProperties[]): Constraint[] {
-    const idx0 = mod._glp_add_rows(this._model, props.length)
-    const constrs = props.map((v, offset) => new Constraint(this._model, idx0 + offset, v))
+    const idx0 = mod._glp_add_rows(this.ptr, props.length)
+    const constrs = props.map((v, offset) => new Constraint(this, idx0 + offset, v))
     this._constrs = this._constrs.concat(constrs)
     return constrs
   }
 
   private addConstrsByCount(n: number, props?: ConstraintProperties): Constraint[] {
-    const idx0 = mod._glp_add_rows(this._model, n)
+    const idx0 = mod._glp_add_rows(this.ptr, n)
     const constrs = Array.from(
       Array(n).keys(),
       offset =>
         new Constraint(
-          this._model,
+          this,
           idx0 + offset,
           props && props.name ? { ...props, name: `${props.name}_${offset}` } : props
         )
@@ -259,13 +257,13 @@ export class Model {
   }
 
   get sense(): 'min' | 'max' {
-    return mod._glp_get_obj_dir(this._model) === RawObjectiveDirection.MIN ? 'min' : 'max'
+    return mod._glp_get_obj_dir(this.ptr) === RawObjectiveDirection.MIN ? 'min' : 'max'
   }
 
   set sense(sense: 'min' | 'max') {
     if (sense !== 'min' && sense !== 'max') throw new Error(`unknown sense '${sense}'`)
     mod._glp_set_obj_dir(
-      this._model,
+      this.ptr,
       sense === 'min' ? RawObjectiveDirection.MIN : RawObjectiveDirection.MAX
     )
   }
@@ -275,25 +273,29 @@ export class Model {
     const fname = '_tmp.lp'
     const fnamePtr = mod._malloc(fname.length + 1)
     mod.stringToUTF8(fname, fnamePtr, fname.length + 1)
-    mod._glp_write_lp(this._model, 0, fnamePtr)
+    mod._glp_write_lp(this.ptr, 0, fnamePtr)
     mod._free(fnamePtr)
     return mod.FS.readFile(fname, { encoding: 'utf8' })
   }
 
   simplex(opts?: Simplex.Options): Status {
     this.update()
-    const param = opts === undefined ? undefined : Simplex.toStruct(opts)
-    mod._glp_simplex(this._model, <SMCPPtr>param)
+    const param = Simplex.toStruct(opts || {})
+    mod._glp_simplex(this.ptr, param)
     if (param !== undefined) mod._free(param)
     return this.status
   }
 
   interior(opts?: Interior.Options): InteriorStatus {
     this.update()
-    const param = opts === undefined ? undefined : Interior.toStruct(opts)
-    mod._glp_interior(this._model, <IPTCPPtr>param)
+    const param = Interior.toStruct(opts || {})
+    mod._glp_interior(this.ptr, param)
     if (param !== undefined) mod._free(param)
-    return <InteriorStatus>RAW2STATUS.get(mod._glp_ipt_status(this._model))
+    return <InteriorStatus>RAW2STATUS.get(mod._glp_ipt_status(this.ptr))
+  }
+
+  get solution(): string {
+    return [...this._vars.map(v => `${v.name} = ${v.value}`), `value = ${this.value}`].join('\n')
   }
 }
 

@@ -1,4 +1,5 @@
 import { mod, RawModel } from './module'
+import { Model } from './model'
 import { getBoundType } from './bounds'
 import Variable, { VariableStatus, RAW2VARIABLESTATUS } from './variable'
 
@@ -14,14 +15,18 @@ export interface ConstraintProperties {
 export class Constraint {
   private _needsUpdate = false
 
-  private _model: RawModel
+  private model: Model
   private _idx: number
   private _lb?: number = 0.0
   private _ub?: number = undefined
   private _coeffs: Map<number, number>
 
-  constructor(model: Ptr, idx: number, props?: ConstraintProperties) {
-    this._model = model
+  private get ptr(): RawModel {
+    return this.model.ptr
+  }
+
+  constructor(model: Model, idx: number, props?: ConstraintProperties) {
+    this.model = model
     this._idx = idx
     this._coeffs = new Map()
     if (!props) return
@@ -39,12 +44,12 @@ export class Constraint {
     const strLen = mod.lengthBytesUTF8(name) + 1
     const namePtr = mod._malloc(strLen)
     mod.stringToUTF8(name, namePtr, strLen)
-    mod._glp_set_row_name(this._model, this._idx, namePtr)
+    mod._glp_set_row_name(this.ptr, this._idx, namePtr)
     mod._free(namePtr)
   }
 
   get name(): string {
-    const namePtr = mod._glp_get_row_name(this._model, this._idx)
+    const namePtr = mod._glp_get_row_name(this.ptr, this._idx)
     return mod.UTF8ToString(namePtr)
   }
 
@@ -53,7 +58,7 @@ export class Constraint {
     const boundType = getBoundType(lb, ub)
     this._lb = lb
     this._ub = ub
-    mod._glp_set_row_bnds(this._model, this._idx, boundType, lb || 0.0, ub || 0.0)
+    mod._glp_set_row_bnds(this.ptr, this._idx, boundType, lb || 0.0, ub || 0.0)
   }
 
   set bounds([lb, ub]: [number | undefined, number | undefined]) {
@@ -135,7 +140,7 @@ export class Constraint {
       idx[i] = v
       coeff[i] = c
     }
-    mod._glp_set_mat_row(this._model, this._idx, size - 1, memIdx, memCoeff)
+    mod._glp_set_mat_row(this.ptr, this._idx, size - 1, memIdx, memCoeff)
 
     mod._free(memIdx)
     mod._free(memCoeff)
@@ -144,15 +149,15 @@ export class Constraint {
   }
 
   get value(): number {
-    return mod._glp_get_row_prim(this._model, this._idx)
+    return mod._glp_get_row_prim(this.ptr, this._idx)
   }
 
   get dual(): number {
-    return mod._glp_get_row_dual(this._model, this._idx)
+    return mod._glp_get_row_dual(this.ptr, this._idx)
   }
 
   get status(): VariableStatus {
-    return <VariableStatus>RAW2VARIABLESTATUS.get(mod._glp_get_row_stat(this._model, this._idx))
+    return <VariableStatus>RAW2VARIABLESTATUS.get(mod._glp_get_row_stat(this.ptr, this._idx))
   }
 }
 export default Constraint
