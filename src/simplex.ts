@@ -40,7 +40,9 @@ export namespace Simplex {
     // write options struct
     const param = mod._malloc(352)
     mod._glp_init_smcp(param)
-    mod.setValue(param, getMessageLevel(opts.msgLevel || 'off'), 'i32')
+    if (opts.msgLevel !== undefined) {
+      mod.setValue(param, getMessageLevel(opts.msgLevel), 'i32')
+    }
     if (opts.method !== undefined) mod.setValue(<number>param + 4, getMethod(opts.method), 'i32')
     // start simplex method
     const ret = mod._glp_simplex(model.ptr, param)
