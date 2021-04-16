@@ -1,4 +1,4 @@
-import { mod, RawModel } from './module'
+import { mod, ModelPtr } from './module'
 import { Model } from './model'
 import { getBoundType } from './bounds'
 import Variable, { VariableStatus, RAW2VARIABLESTATUS } from './variable'
@@ -21,7 +21,7 @@ export class Constraint {
   private _ub?: number = undefined
   private _coeffs: Map<number, number>
 
-  private get ptr(): RawModel {
+  private get ptr(): ModelPtr {
     return this.model.ptr
   }
 

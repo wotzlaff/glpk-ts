@@ -1,108 +1,18 @@
-import {
-  RawObjectiveDirection,
-  RawMessageLevel,
-  RawMethod,
-  RawStatus,
-  RawOrderingAlgorithm,
-} from './enums'
+import { Const } from './enums'
 
-import { mod, RawModel } from './module'
+import { mod, ModelPtr } from './module'
 import Variable, { VariableProperties } from './variable'
 import Constraint, { ConstraintProperties } from './constraint'
-import { IPTCPPtr, SMCPPtr } from 'glpk-wasm'
 
-export type Status =
-  | 'optimal'
-  | 'feasible'
-  | 'infeasible'
-  | 'no_feasible'
-  | 'unbounded'
-  | 'undefined'
+import { MessageLevel, getMessageLevel } from './msglevel'
+import { getStatus, StatusSimplex, StatusInterior, StatusMIP } from './status'
 
-export type StatusInterior = 'undefined' | 'optimal' | 'infeasible' | 'no_feasible'
+import { IOCPPtr } from 'glpk-wasm'
+import { Simplex } from 'simplex'
+import { Interior } from 'interior'
 
-const STATUS2RAW = new Map<Status, RawStatus>([
-  ['optimal', RawStatus.OPTIMAL],
-  ['feasible', RawStatus.FEASIBLE],
-  ['infeasible', RawStatus.INFEASIBLE],
-  ['no_feasible', RawStatus.NO_FEASIBLE],
-  ['unbounded', RawStatus.UNBOUNDED],
-  ['undefined', RawStatus.UNDEFINED],
-])
-
-const RAW2STATUS = new Map(Array.from(STATUS2RAW.entries(), ([k, v]) => [v, k]))
-
-export namespace Simplex {
-  export type Method = 'primal' | 'dual' | 'dual_primal'
-  export type MessageLevel = 'all' | 'on' | 'off' | 'error' | 'debug'
-
-  export interface Options {
-    msgLevel?: MessageLevel
-    method?: Method
-  }
-}
-export class Simplex {
-  static getMessageLevel(msgLevel: Simplex.MessageLevel): RawMessageLevel {
-    const res = {
-      all: RawMessageLevel.ALL,
-      on: RawMessageLevel.ON,
-      off: RawMessageLevel.OFF,
-      debug: RawMessageLevel.DEBUG,
-      error: RawMessageLevel.ERROR,
-    }[msgLevel]
-    if (res === undefined) throw new Error(`unknown message level '${msgLevel}'`)
-    return res
-  }
-
-  static getMethod(method: Simplex.Method): RawMethod {
-    const res = {
-      primal: RawMethod.PRIMAL,
-      dual: RawMethod.DUAL,
-      dual_primal: RawMethod.DUAL_PRIMAL,
-    }[method]
-    if (res === undefined) throw new Error(`unknown method '${method}'`)
-    return res
-  }
-
-  static toStruct(opts: Simplex.Options): SMCPPtr {
-    const param = mod._malloc(352)
-    mod._glp_init_smcp(param)
-    mod.setValue(param, Simplex.getMessageLevel(opts.msgLevel || 'off'), 'i32')
-    if (opts.method !== undefined)
-      mod.setValue(<number>param + 4, Simplex.getMethod(opts.method), 'i32')
-    return param
-  }
-}
-
-export namespace Interior {
-  export type OrderingAlgorithm = 'none' | 'qmd' | 'amd' | 'symamd'
-
-  export interface Options {
-    msgLevel?: Simplex.MessageLevel
-    ordering?: OrderingAlgorithm
-  }
-}
-
-class Interior {
-  static getOrderingAlgorithm(method: Interior.OrderingAlgorithm): RawOrderingAlgorithm {
-    const res = {
-      none: RawOrderingAlgorithm.NONE,
-      qmd: RawOrderingAlgorithm.QMD,
-      amd: RawOrderingAlgorithm.AMD,
-      symamd: RawOrderingAlgorithm.SYMAMD,
-    }[method]
-    if (res === undefined) throw new Error(`unknown ordering '${method}'`)
-    return res
-  }
-
-  static toStruct(opts: Interior.Options): IPTCPPtr {
-    const param = mod._malloc(392)
-    mod._glp_init_iptcp(param)
-    mod.setValue(param, Simplex.getMessageLevel(opts.msgLevel || 'off'), 'i32')
-    if (opts.ordering !== undefined)
-      mod.setValue(<number>param + 4, Interior.getOrderingAlgorithm(opts.ordering), 'i32')
-    return param
-  }
+interface OptionsMIP {
+  msgLevel?: MessageLevel
 }
 
 export interface ModelProperties {
@@ -111,7 +21,7 @@ export interface ModelProperties {
 }
 
 export class Model {
-  ptr: RawModel = mod._glp_create_prob()
+  ptr: ModelPtr = mod._glp_create_prob()
   private _vars: Variable[] = []
   private _constrs: Constraint[] = []
 
@@ -159,24 +69,29 @@ export class Model {
     return mod._glp_get_num_int(this.ptr)
   }
 
-  get status(): Status {
-    const stat = <RawStatus>mod._glp_get_status(this.ptr)
-    return <Status>RAW2STATUS.get(stat)
+  get status(): StatusSimplex {
+    const stat = <Const.Status>mod._glp_get_status(this.ptr)
+    return <StatusSimplex>getStatus(stat)
   }
 
-  get statusPrimal(): Status {
-    const stat = <RawStatus>mod._glp_get_prim_stat(this.ptr)
-    return <Status>RAW2STATUS.get(stat)
+  get statusPrimal(): StatusSimplex {
+    const stat = <Const.Status>mod._glp_get_prim_stat(this.ptr)
+    return <StatusSimplex>getStatus(stat)
   }
 
-  get statusDual(): Status {
-    const stat = <RawStatus>mod._glp_get_dual_stat(this.ptr)
-    return <Status>RAW2STATUS.get(stat)
+  get statusDual(): StatusSimplex {
+    const stat = <Const.Status>mod._glp_get_dual_stat(this.ptr)
+    return <StatusSimplex>getStatus(stat)
   }
 
   get statusInt(): StatusInterior {
-    const stat = <RawStatus>mod._glp_ipt_status(this.ptr)
-    return <StatusInterior>RAW2STATUS.get(stat)
+    const stat = <Const.Status>mod._glp_ipt_status(this.ptr)
+    return <StatusInterior>getStatus(stat)
+  }
+
+  get statusMIP(): StatusMIP {
+    const stat = <Const.Status>mod._glp_mip_status(this.ptr)
+    return <StatusMIP>getStatus(stat)
   }
 
   addVars(vars: number, props?: VariableProperties): Variable[]
@@ -266,14 +181,14 @@ export class Model {
   }
 
   get sense(): 'min' | 'max' {
-    return mod._glp_get_obj_dir(this.ptr) === RawObjectiveDirection.MIN ? 'min' : 'max'
+    return mod._glp_get_obj_dir(this.ptr) === Const.ObjectiveDirection.MIN ? 'min' : 'max'
   }
 
   set sense(sense: 'min' | 'max') {
     if (sense !== 'min' && sense !== 'max') throw new Error(`unknown sense '${sense}'`)
     mod._glp_set_obj_dir(
       this.ptr,
-      sense === 'min' ? RawObjectiveDirection.MIN : RawObjectiveDirection.MAX
+      sense === 'min' ? Const.ObjectiveDirection.MIN : Const.ObjectiveDirection.MAX
     )
   }
 
@@ -287,20 +202,14 @@ export class Model {
     return mod.FS.readFile(fname, { encoding: 'utf8' })
   }
 
-  simplex(opts?: Simplex.Options): Status {
+  simplex(opts?: Simplex.Options): Simplex.ReturnCode {
     this.update()
-    const param = Simplex.toStruct(opts || {})
-    mod._glp_simplex(this.ptr, param)
-    if (param !== undefined) mod._free(param)
-    return this.status
+    return Simplex.solve(this, opts || {})
   }
 
-  interior(opts?: Interior.Options): StatusInterior {
+  interior(opts?: Interior.Options): Interior.ReturnCode {
     this.update()
-    const param = Interior.toStruct(opts || {})
-    mod._glp_interior(this.ptr, param)
-    if (param !== undefined) mod._free(param)
-    return this.statusInt
+    return Interior.solve(this, opts || {})
   }
 
   get solution(): string {
@@ -333,6 +242,17 @@ export class Model {
       case 'no_feasible':
         return 'problem has no feasible solution'
     }
+  }
+
+  intopt(opts?: OptionsMIP): StatusMIP {
+    opts = opts || {}
+    // prepare option struct
+    const param = <IOCPPtr>mod._malloc(328)
+    mod._glp_init_iocp(param)
+    mod.setValue(param, getMessageLevel(opts.msgLevel || 'off'), 'i32')
+    mod._glp_intopt(this.ptr, param)
+    mod._free(param)
+    return this.statusMIP
   }
 }
 

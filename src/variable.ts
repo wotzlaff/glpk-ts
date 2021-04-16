@@ -1,7 +1,7 @@
-import { mod, RawModel } from './module'
+import { mod, ModelPtr } from './module'
 import { Model } from './model'
 import { getBoundType } from './bounds'
-import { RawVariableStatus, RawVariableType } from './enums'
+import { Const } from './enums'
 
 export type VariableType =
   | 'c'
@@ -14,22 +14,22 @@ export type VariableType =
   | 'int'
   | 'integer'
 
-const VARIABLETYPE2RAW = new Map<VariableType | undefined, RawVariableType>([
-  [undefined, RawVariableType.CONTINUOUS],
-  ['c', RawVariableType.CONTINUOUS],
-  ['cont', RawVariableType.CONTINUOUS],
-  ['continuous', RawVariableType.CONTINUOUS],
-  ['i', RawVariableType.INTEGER],
-  ['int', RawVariableType.INTEGER],
-  ['integer', RawVariableType.INTEGER],
-  ['b', RawVariableType.BINARY],
-  ['bin', RawVariableType.BINARY],
-  ['binary', RawVariableType.BINARY],
+const VARIABLETYPE2RAW = new Map<VariableType | undefined, Const.VariableType>([
+  [undefined, Const.VariableType.CONTINUOUS],
+  ['c', Const.VariableType.CONTINUOUS],
+  ['cont', Const.VariableType.CONTINUOUS],
+  ['continuous', Const.VariableType.CONTINUOUS],
+  ['i', Const.VariableType.INTEGER],
+  ['int', Const.VariableType.INTEGER],
+  ['integer', Const.VariableType.INTEGER],
+  ['b', Const.VariableType.BINARY],
+  ['bin', Const.VariableType.BINARY],
+  ['binary', Const.VariableType.BINARY],
 ])
 
 const RAW2VARIABLETYPE = new Map(Array.from(VARIABLETYPE2RAW.entries(), ([k, v]) => [v, k]))
 
-function getVariableType(type?: VariableType): RawVariableType {
+function getVariableType(type?: VariableType): Const.VariableType {
   const res = VARIABLETYPE2RAW.get(type)
   if (res === undefined) throw new Error(`unknown variable type '${type}'`)
   return res
@@ -37,12 +37,12 @@ function getVariableType(type?: VariableType): RawVariableType {
 
 export type VariableStatus = 'basic' | 'lower-bound' | 'upper-bound' | 'free' | 'fixed'
 
-export const VARIABLESTATUS2RAW = new Map<VariableStatus, RawVariableStatus>([
-  ['basic', RawVariableStatus.BASIC],
-  ['lower-bound', RawVariableStatus.LB],
-  ['upper-bound', RawVariableStatus.UB],
-  ['free', RawVariableStatus.FREE],
-  ['fixed', RawVariableStatus.FIXED],
+export const VARIABLESTATUS2RAW = new Map<VariableStatus, Const.VariableStatus>([
+  ['basic', Const.VariableStatus.BASIC],
+  ['lower-bound', Const.VariableStatus.LB],
+  ['upper-bound', Const.VariableStatus.UB],
+  ['free', Const.VariableStatus.FREE],
+  ['fixed', Const.VariableStatus.FIXED],
 ])
 
 export const RAW2VARIABLESTATUS = new Map(
@@ -63,7 +63,7 @@ export class Variable {
   _lb: number | undefined = 0.0
   _ub: number | undefined = 0.0
 
-  private get ptr(): RawModel {
+  private get ptr(): ModelPtr {
     return this.model.ptr
   }
 

@@ -19,4 +19,4 @@ export async function loadModule(wasmLocation?: string): Promise<GLPKModule> {
   return mod
 }
 
-export type RawModel = ReturnType<GLPKModule['_glp_create_prob']>
+export type ModelPtr = ReturnType<GLPKModule['_glp_create_prob']>
