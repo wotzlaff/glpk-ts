@@ -19,7 +19,7 @@ export type Status =
   | 'unbounded'
   | 'undefined'
 
-export type InteriorStatus = 'undefined' | 'optimal' | 'infeasible' | 'no_feasible'
+export type StatusInterior = 'undefined' | 'optimal' | 'infeasible' | 'no_feasible'
 
 const STATUS2RAW = new Map<Status, RawStatus>([
   ['optimal', RawStatus.OPTIMAL],
@@ -174,9 +174,9 @@ export class Model {
     return <Status>RAW2STATUS.get(stat)
   }
 
-  get statusInt(): InteriorStatus {
+  get statusInt(): StatusInterior {
     const stat = <RawStatus>mod._glp_ipt_status(this.ptr)
-    return <InteriorStatus>RAW2STATUS.get(stat)
+    return <StatusInterior>RAW2STATUS.get(stat)
   }
 
   addVars(vars: number, props?: VariableProperties): Variable[]
@@ -295,7 +295,7 @@ export class Model {
     return this.status
   }
 
-  interior(opts?: Interior.Options): InteriorStatus {
+  interior(opts?: Interior.Options): StatusInterior {
     this.update()
     const param = Interior.toStruct(opts || {})
     mod._glp_interior(this.ptr, param)
