@@ -2,7 +2,7 @@ import { Model } from './model'
 import { mod } from './module'
 import { Const } from './enums'
 import { getMessageLevel, MessageLevel } from './msglevel'
-import { IOCPPtr } from 'glpk-wasm'
+import { IOCPPtr, TreePtr } from 'glpk-wasm'
 
 export namespace MIP {
   const BranchingTechniques = {
@@ -47,6 +47,8 @@ export namespace MIP {
     limitTime?: number
     logFreq?: number
     logDelay?: number
+    callback?: (tree: TreePtr) => void
+    callbackPtr?: FunctionPtr
     preprocessing?: PreprocessingTechnique
     gapMIP?: number
     cutsMIR?: boolean
@@ -119,16 +121,18 @@ export namespace MIP {
     opts.limitTime !== undefined && mod.setValue(<number>param + 32, opts.limitTime, 'i32')
     opts.logFreq !== undefined && mod.setValue(<number>param + 36, opts.logFreq, 'i32')
     opts.logDelay !== undefined && mod.setValue(<number>param + 40, opts.logDelay, 'i32')
-    // padding + 4
-    // cbFunc + 4
+    if (opts.callbackPtr !== undefined) {
+      mod.setValue(<number>param + 44, <number>opts.callbackPtr, '*')
+    }
     // cbInfo + 4
     // cbSize + 4
     if (opts.preprocessing !== undefined) {
       tmp = PreprocessingTechniques[opts.preprocessing]
       if (tmp === undefined)
         throw new Error(`unknown preprocessing technique '${opts.preprocessing}'`)
-      mod.setValue(<number>param + 60, tmp, 'i32')
+      mod.setValue(<number>param + 56, tmp, 'i32')
     }
+    // padding + 4
     opts.gapMIP !== undefined && mod.setValue(<number>param + 64, opts.gapMIP, 'double')
     opts.cutsMIR !== undefined && mod.setValue(<number>param + 72, opts.cutsMIR ? 1 : 0, 'i32')
     opts.cutsGomory !== undefined &&
@@ -151,9 +155,16 @@ export namespace MIP {
 
   export function solve(model: Model, opts: Options): ReturnCode {
     // prepare option struct
+    if (opts.callback !== undefined) {
+      opts.callbackPtr = mod.addFunction(opts.callback, 'vii')
+    }
     const param = createStruct(opts || {})
     const retCode = mod._glp_intopt(model.ptr, param)
     mod._free(param)
+    if (opts.callback !== undefined) {
+      mod.removeFunction(<FunctionPtr>opts.callbackPtr)
+      opts.callbackPtr = undefined
+    }
     return getReturnCode(retCode)
   }
 }
