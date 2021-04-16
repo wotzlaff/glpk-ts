@@ -6,11 +6,11 @@
       require.config({
         paths: {
           'glpk-wasm': 'https://unpkg.com/glpk-wasm@0.1.0/dist/glpk.more',
-          'glpk-ts': 'https://unpkg.com/glpk-ts@0.0.4/dist/index',
+          'glpk-ts': 'https://unpkg.com/glpk-ts@0.0.4?',
         },
       })
       require(['glpk-ts'], GLPK => {
-        GLPK.loadModule('https://unpkg.com/glpk-wasm@0.1.0/dist/glpk.more.wasm').then(() => {
+        GLPK.loadModule().then(() => {
           const m = new GLPK.Model({
             sense: 'max',
             name: 'example',
