@@ -300,7 +300,7 @@ export class Model {
     const param = Interior.toStruct(opts || {})
     mod._glp_interior(this.ptr, param)
     if (param !== undefined) mod._free(param)
-    return <InteriorStatus>RAW2STATUS.get(mod._glp_ipt_status(this.ptr))
+    return this.statusInt
   }
 
   get solution(): string {
