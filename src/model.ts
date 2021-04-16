@@ -135,6 +135,10 @@ export class Model {
     return mod._glp_get_obj_val(this.ptr)
   }
 
+  get valueInt(): number {
+    return mod._glp_ipt_obj_val(this.ptr)
+  }
+
   get numVars(): number {
     return mod._glp_get_num_cols(this.ptr)
   }
@@ -168,6 +172,11 @@ export class Model {
   get statusDual(): Status {
     const stat = <RawStatus>mod._glp_get_dual_stat(this.ptr)
     return <Status>RAW2STATUS.get(stat)
+  }
+
+  get statusInt(): InteriorStatus {
+    const stat = <RawStatus>mod._glp_ipt_status(this.ptr)
+    return <InteriorStatus>RAW2STATUS.get(stat)
   }
 
   addVars(vars: number, props?: VariableProperties): Variable[]
@@ -295,7 +304,35 @@ export class Model {
   }
 
   get solution(): string {
-    return [...this._vars.map(v => `${v.name} = ${v.value}`), `value = ${this.value}`].join('\n')
+    switch (this.status) {
+      case 'undefined':
+      case 'feasible':
+      case 'infeasible':
+        throw new Error(`status is '${this.status}', run simplex first`)
+      case 'optimal':
+        return [...this._vars.map(v => `${v.name} = ${v.value}`), `value = ${this.value}`].join(
+          '\n'
+        )
+      case 'unbounded':
+        return 'problem is unbounded'
+      case 'no_feasible':
+        return 'problem has no feasible solution'
+    }
+  }
+
+  get solutionInt(): string {
+    switch (this.statusInt) {
+      case 'undefined':
+      case 'infeasible':
+        throw new Error(`status is '${this.statusInt}', run simplex first`)
+      case 'optimal':
+        return [
+          ...this._vars.map(v => `${v.name} = ${v.valueInt}`),
+          `value = ${this.valueInt}`,
+        ].join('\n')
+      case 'no_feasible':
+        return 'problem has no feasible solution'
+    }
   }
 }
 
