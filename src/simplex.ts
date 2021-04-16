@@ -4,11 +4,9 @@ import { Const } from './enums'
 import { getMessageLevel, MessageLevel } from './msglevel'
 
 export namespace Simplex {
-  export type Method = 'primal' | 'dual' | 'dual_primal'
-
   export interface Options {
     msgLevel?: MessageLevel
-    method?: Method
+    method?: 'primal' | 'dual' | 'dual_primal'
     pricing?: 'std' | 'pse'
     ratioTest?: 'std' | 'harris' | 'flipflop'
     tolPrimal?: number
@@ -37,7 +35,7 @@ export namespace Simplex {
     | 'no_primal_feasible'
     | 'no_dual_feasible'
 
-  function getMethod(method: Simplex.Method): Const.Method {
+  function getMethod(method: string): Const.Method {
     const res = {
       primal: Const.Method.PRIMAL,
       dual: Const.Method.DUAL,
@@ -68,7 +66,7 @@ export namespace Simplex {
 
   function getReturnCode(retCode: number): ReturnCode {
     switch (retCode) {
-      case 0:
+      case Const.ReturnCode.OK:
         return 'ok'
       case Const.ReturnCode.EBADB:
         return 'basis_invalid'
@@ -97,9 +95,7 @@ export namespace Simplex {
     }
   }
 
-  export function solve(model: Model, opts: Simplex.Options): ReturnCode {
-    opts = opts || {}
-    // write options struct
+  function createStruct(opts: Options) {
     const param = mod._malloc(352)
     mod._glp_init_smcp(param)
     if (opts.msgLevel !== undefined) {
@@ -130,22 +126,37 @@ export namespace Simplex {
       mod.setValue(<number>param + 48, opts.objUpper, 'double')
     }
     if (opts.limitIter !== undefined) {
-      mod.setValue(<number>param + 52, opts.limitIter, 'i32')
+      mod.setValue(<number>param + 56, opts.limitIter, 'i32')
     }
     if (opts.limitTime !== undefined) {
-      mod.setValue(<number>param + 56, opts.limitTime, 'i32')
+      mod.setValue(<number>param + 60, opts.limitTime, 'i32')
     }
     if (opts.logFreq !== undefined) {
-      mod.setValue(<number>param + 60, opts.logFreq, 'i32')
+      mod.setValue(<number>param + 64, opts.logFreq, 'i32')
     }
     if (opts.logDelay !== undefined) {
-      mod.setValue(<number>param + 64, opts.logDelay, 'i32')
+      mod.setValue(<number>param + 68, opts.logDelay, 'i32')
     }
     if (opts.presolve !== undefined) {
-      mod.setValue(<number>param + 68, opts.presolve ? 1 : 0, 'i32')
+      mod.setValue(<number>param + 72, opts.presolve ? 1 : 0, 'i32')
     }
+    return param
+  }
+
+  export function solve(model: Model, opts: Options): ReturnCode {
+    // write options struct
+    const param = createStruct(opts || {})
     // start simplex method
     const retCode = mod._glp_simplex(model.ptr, param)
+    mod._free(param)
+    return getReturnCode(retCode)
+  }
+
+  export function solveExact(model: Model, opts: Options): ReturnCode {
+    // write options struct
+    const param = createStruct(opts || {})
+    // start simplex method
+    const retCode = mod._glp_exact(model.ptr, param)
     mod._free(param)
     return getReturnCode(retCode)
   }

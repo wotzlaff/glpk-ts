@@ -164,6 +164,10 @@ export class Constraint {
     return mod._glp_ipt_row_dual(this.ptr, this._idx)
   }
 
+  get valueMIP(): number {
+    return mod._glp_mip_row_val(this.ptr, this._idx)
+  }
+
   get status(): VariableStatus {
     return <VariableStatus>RAW2VARIABLESTATUS.get(mod._glp_get_row_stat(this.ptr, this._idx))
   }

@@ -102,4 +102,25 @@ export namespace Const {
     EDATA = 0x12, // invalid data
     ERANGE = 0x13, // result out of range
   }
+
+  export enum BranchingTechnique {
+    FFV = 1, // first fractional variable
+    LFV = 2, // last fractional variable
+    MFV = 3, // most fractional variable
+    DTH = 4, // heuristic by Driebeck and Tomlin
+    PCH = 5, // hybrid pseudocost heuristic
+  }
+
+  export enum BacktrackingTechnique {
+    DFS = 1, // depth first search
+    BFS = 2, // breadth first search
+    BLB = 3, // best local bound
+    BPH = 4, // best projection heuristic
+  }
+
+  export enum PreprocessingTechnique {
+    NONE = 0, // disable preprocessing
+    ROOT = 1, // preprocessing only on root level
+    ALL = 2, // preprocessing on all levels
+  }
 }

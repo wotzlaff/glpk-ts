@@ -4,16 +4,10 @@ import { mod, ModelPtr } from './module'
 import Variable, { VariableProperties } from './variable'
 import Constraint, { ConstraintProperties } from './constraint'
 
-import { MessageLevel, getMessageLevel } from './msglevel'
 import { getStatus, StatusSimplex, StatusInterior, StatusMIP } from './status'
-
-import { IOCPPtr } from 'glpk-wasm'
-import { Simplex } from 'simplex'
-import { Interior } from 'interior'
-
-interface OptionsMIP {
-  msgLevel?: MessageLevel
-}
+import { Interior } from './interior'
+import { Simplex } from './simplex'
+import { MIP } from './mip'
 
 export interface ModelProperties {
   name?: string
@@ -47,6 +41,10 @@ export class Model {
 
   get valueInt(): number {
     return mod._glp_ipt_obj_val(this.ptr)
+  }
+
+  get valueMIP(): number {
+    return mod._glp_mip_obj_val(this.ptr)
   }
 
   get numVars(): number {
@@ -212,20 +210,29 @@ export class Model {
     return Interior.solve(this, opts || {})
   }
 
+  intopt(opts?: MIP.Options): MIP.ReturnCode {
+    this.update()
+    return MIP.solve(this, opts || {})
+  }
+
   get solution(): string {
     switch (this.status) {
       case 'undefined':
-      case 'feasible':
       case 'infeasible':
         throw new Error(`status is '${this.status}', run simplex first`)
+      case 'feasible':
       case 'optimal':
-        return [...this._vars.map(v => `${v.name} = ${v.value}`), `value = ${this.value}`].join(
-          '\n'
-        )
+        return [
+          `status = ${this.status}`,
+          ...this._vars.map(v => `${v.name} = ${v.value}`),
+          `value = ${this.value}`,
+        ].join('\n')
       case 'unbounded':
         return 'problem is unbounded'
       case 'no_feasible':
         return 'problem has no feasible solution'
+      default:
+        throw new Error('unknown status')
     }
   }
 
@@ -236,23 +243,33 @@ export class Model {
         throw new Error(`status is '${this.statusInt}', run simplex first`)
       case 'optimal':
         return [
+          `status = ${this.status}`,
           ...this._vars.map(v => `${v.name} = ${v.valueInt}`),
           `value = ${this.valueInt}`,
         ].join('\n')
       case 'no_feasible':
         return 'problem has no feasible solution'
+      default:
+        throw new Error('unknown status')
     }
   }
 
-  intopt(opts?: OptionsMIP): StatusMIP {
-    opts = opts || {}
-    // prepare option struct
-    const param = <IOCPPtr>mod._malloc(328)
-    mod._glp_init_iocp(param)
-    mod.setValue(param, getMessageLevel(opts.msgLevel || 'off'), 'i32')
-    mod._glp_intopt(this.ptr, param)
-    mod._free(param)
-    return this.statusMIP
+  get solutionMIP(): string {
+    switch (this.statusMIP) {
+      case 'undefined':
+        throw new Error(`status is '${this.statusInt}', run simplex first`)
+      case 'feasible':
+      case 'optimal':
+        return [
+          `status = ${this.status}`,
+          ...this._vars.map(v => `${v.name} = ${v.valueMIP}`),
+          `value = ${this.valueMIP}`,
+        ].join('\n')
+      case 'no_feasible':
+        return 'problem has no feasible solution'
+      default:
+        throw new Error('unknown status')
+    }
   }
 }
 
