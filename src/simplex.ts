@@ -9,6 +9,18 @@ export namespace Simplex {
   export interface Options {
     msgLevel?: MessageLevel
     method?: Method
+    pricing?: 'std' | 'pse'
+    ratioTest?: 'std' | 'harris' | 'flipflop'
+    tolPrimal?: number
+    tolDual?: number
+    tolPivot?: number
+    objLower?: number
+    objUpper?: number
+    limitIter?: number
+    limitTime?: number
+    logFreq?: number
+    logDelay?: number
+    presolve?: boolean
   }
 
   export type ReturnCode =
@@ -29,25 +41,33 @@ export namespace Simplex {
     const res = {
       primal: Const.Method.PRIMAL,
       dual: Const.Method.DUAL,
-      dual_primal: Const.Method.DUAL_PRIMAL,
+      dual_primal: Const.Method.DUALP,
     }[method]
     if (res === undefined) throw new Error(`unknown method '${method}'`)
     return res
   }
 
-  export function solve(model: Model, opts: Simplex.Options): ReturnCode {
-    opts = opts || {}
-    // write options struct
-    const param = mod._malloc(352)
-    mod._glp_init_smcp(param)
-    if (opts.msgLevel !== undefined) {
-      mod.setValue(param, getMessageLevel(opts.msgLevel), 'i32')
-    }
-    if (opts.method !== undefined) mod.setValue(<number>param + 4, getMethod(opts.method), 'i32')
-    // start simplex method
-    const ret = mod._glp_simplex(model.ptr, param)
-    mod._free(param)
-    switch (ret) {
+  function getPricing(pricing: string): Const.Pricing {
+    const res = {
+      std: Const.Pricing.STD,
+      pse: Const.Pricing.PSE,
+    }[pricing]
+    if (res === undefined) throw new Error(`unknown pricing '${pricing}'`)
+    return res
+  }
+
+  function getRatioTest(rtest: string): Const.RatioTest {
+    const res = {
+      std: Const.RatioTest.STD,
+      harris: Const.RatioTest.HAR,
+      flipflop: Const.RatioTest.FLIP,
+    }[rtest]
+    if (res === undefined) throw new Error(`unknown rtest '${rtest}'`)
+    return res
+  }
+
+  function getReturnCode(retCode: number): ReturnCode {
+    switch (retCode) {
       case 0:
         return 'ok'
       case Const.ReturnCode.EBADB:
@@ -73,7 +93,60 @@ export namespace Simplex {
       case Const.ReturnCode.ENODFS:
         return 'no_dual_feasible'
       default:
-        throw new Error(`unknown return code from simplex: ${ret}`)
+        throw new Error(`unknown return code from simplex: ${retCode}`)
     }
+  }
+
+  export function solve(model: Model, opts: Simplex.Options): ReturnCode {
+    opts = opts || {}
+    // write options struct
+    const param = mod._malloc(352)
+    mod._glp_init_smcp(param)
+    if (opts.msgLevel !== undefined) {
+      mod.setValue(param, getMessageLevel(opts.msgLevel), 'i32')
+    }
+    if (opts.method !== undefined) {
+      mod.setValue(<number>param + 4, getMethod(opts.method), 'i32')
+    }
+    if (opts.pricing !== undefined) {
+      mod.setValue(<number>param + 8, getPricing(opts.pricing), 'i32')
+    }
+    if (opts.ratioTest !== undefined) {
+      mod.setValue(<number>param + 12, getRatioTest(opts.ratioTest), 'i32')
+    }
+    if (opts.tolPrimal !== undefined) {
+      mod.setValue(<number>param + 16, opts.tolPrimal, 'double')
+    }
+    if (opts.tolDual !== undefined) {
+      mod.setValue(<number>param + 24, opts.tolDual, 'double')
+    }
+    if (opts.tolPivot !== undefined) {
+      mod.setValue(<number>param + 32, opts.tolPivot, 'double')
+    }
+    if (opts.objLower !== undefined) {
+      mod.setValue(<number>param + 40, opts.objLower, 'double')
+    }
+    if (opts.objUpper !== undefined) {
+      mod.setValue(<number>param + 48, opts.objUpper, 'double')
+    }
+    if (opts.limitIter !== undefined) {
+      mod.setValue(<number>param + 52, opts.limitIter, 'i32')
+    }
+    if (opts.limitTime !== undefined) {
+      mod.setValue(<number>param + 56, opts.limitTime, 'i32')
+    }
+    if (opts.logFreq !== undefined) {
+      mod.setValue(<number>param + 60, opts.logFreq, 'i32')
+    }
+    if (opts.logDelay !== undefined) {
+      mod.setValue(<number>param + 64, opts.logDelay, 'i32')
+    }
+    if (opts.presolve !== undefined) {
+      mod.setValue(<number>param + 68, opts.presolve ? 1 : 0, 'i32')
+    }
+    // start simplex method
+    const retCode = mod._glp_simplex(model.ptr, param)
+    mod._free(param)
+    return getReturnCode(retCode)
   }
 }

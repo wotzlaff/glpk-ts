@@ -49,35 +49,35 @@ export namespace Const {
   }
 
   export enum MessageLevel {
-    OFF = 0,
-    ERROR = 1,
-    ON = 2,
-    ALL = 3,
-    DEBUG = 4,
+    OFF = 0, // no output
+    ERR = 1, // warning and error messages only
+    ON = 2, // normal output
+    ALL = 3, // full output
+    DBG = 4, // debug output
   }
 
   export enum Method {
-    PRIMAL = 1,
-    DUAL_PRIMAL = 2,
-    DUAL = 3,
+    PRIMAL = 1, // use primal simplex
+    DUALP = 2, // use dual; if it fails, use primal
+    DUAL = 3, // use dual simplex
   }
 
   export enum Pricing {
-    STANDARD = 0x11,
-    STEEPEST_EDGE = 0x22,
+    STD = 0x11, // standard (Dantzig's rule)
+    PSE = 0x22, // projected steepest edge
   }
 
   export enum RatioTest {
-    STANDARD = 0x11,
-    HARRIS = 0x22,
-    FLIPFLOP = 0x33,
+    STD = 0x11, // standard (textbook)
+    HAR = 0x22, // Harris' two-pass ratio test
+    FLIP = 0x33, // long-step (flip-flop) ratio test
   }
 
   export enum OrderingAlgorithm {
-    NONE = 0,
-    QMD = 1,
-    AMD = 2,
-    SYMAMD = 3,
+    NONE = 0, // natural (original) ordering
+    QMD = 1, // quotient minimum degree (QMD)
+    AMD = 2, // approx. minimum degree (AMD)
+    SYMAMD = 3, // approx. minimum degree (SYMAMD)
   }
 
   export enum ReturnCode {
