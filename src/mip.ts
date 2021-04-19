@@ -2,6 +2,7 @@ import { Model } from './model'
 import { mod } from './module'
 import { Const } from './enums'
 import { getMessageLevel, MessageLevel } from './msglevel'
+import Tree from './tree'
 import { IOCPPtr, TreePtr } from 'glpk-wasm'
 
 export namespace MIP {
@@ -47,7 +48,7 @@ export namespace MIP {
     limitTime?: number
     logFreq?: number
     logDelay?: number
-    callback?: (tree: TreePtr) => void
+    callback?: (tree: Tree) => void
     callbackPtr?: FunctionPtr
     preprocessing?: PreprocessingTechnique
     gapMIP?: number
@@ -156,7 +157,8 @@ export namespace MIP {
   export function solve(model: Model, opts: Options): ReturnCode {
     // prepare option struct
     if (opts.callback !== undefined) {
-      opts.callbackPtr = mod.addFunction(opts.callback, 'vii')
+      const callback = opts.callback
+      opts.callbackPtr = mod.addFunction((treePtr: TreePtr) => callback(new Tree(treePtr)), 'vii')
     }
     const param = createStruct(opts || {})
     const retCode = mod._glp_intopt(model.ptr, param)

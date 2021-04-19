@@ -123,4 +123,43 @@ export namespace Const {
     ROOT = 1, // preprocessing only on root level
     ALL = 2, // preprocessing on all levels
   }
+
+  export enum ConditionIndicator {
+    // condition indicator
+    PE = 1, // primal equalities
+    PB = 2, // primal bounds
+    DE = 3, // dual equalities
+    DB = 4, // dual bounds
+    CS = 5, // complementary slackness
+  }
+
+  export enum ReasonCode {
+    ROWGEN = 0x01, // request for row generation
+    BINGO = 0x02, // better integer solution found
+    HEUR = 0x03, // request for heuristic solution
+    CUTGEN = 0x04, // request for cut generation
+    BRANCH = 0x05, // request for branching
+    SELECT = 0x06, // request for subproblem selection
+    PREPRO = 0x07, // request for preprocessing
+  }
+
+  export enum BranchSelection {
+    NO_BRNCH = 0, // select no branch
+    DN_BRNCH = 1, // select down-branch
+    UP_BRNCH = 2, // select up-branch
+  }
+
+  export enum RowOriginFlag {
+    //row origin flag
+    REG = 0, // regular constraint
+    LAZY = 1, // "lazy" constraint
+    CUT = 2, // cutting plane constraint
+  }
+  export enum RowClass {
+    // row class descriptor
+    GMI = 1, // Gomory's mixed integer cut
+    MIR = 2, // mixed integer rounding cut
+    COV = 3, // mixed cover cut
+    CLQ = 4, // clique cut
+  }
 }

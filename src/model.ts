@@ -15,12 +15,13 @@ export interface ModelProperties {
 }
 
 export class Model {
-  ptr: ModelPtr = mod._glp_create_prob()
+  readonly ptr: ModelPtr
   private _vars: Variable[] = []
   private _constrs: Constraint[] = []
 
   constructor(props?: ModelProperties) {
     if (mod === undefined) throw new Error('wasm module not loaded')
+    this.ptr = mod._glp_create_prob()
     if (props === undefined) return
     const { name, sense } = props
     if (name !== undefined) {
@@ -33,6 +34,12 @@ export class Model {
     if (sense !== undefined) {
       this.sense = sense
     }
+  }
+
+  static fromPointer(ptr: ModelPtr): Model {
+    const model = Object.create(Model.prototype)
+    model.ptr = ptr
+    return model
   }
 
   get value(): number {
