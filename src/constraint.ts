@@ -89,7 +89,7 @@ export class Constraint {
       return this.addCollection(v)
     }
     if (!(v instanceof Variable)) {
-      throw new Error('variable should habe type Variable')
+      throw new Error('variable should have type Variable')
     }
     if (!c) return this
     const value = (this._coeffs.get(v._idx) || 0) + c
@@ -110,7 +110,7 @@ export class Constraint {
     }
     for (const [v, c] of iter) {
       if (!(v instanceof Variable)) {
-        throw new Error('variable should habe type Variable')
+        throw new Error('variable should have type Variable')
       }
       if (!c) continue
       const value = (this._coeffs.get(v._idx) || 0) + c
