@@ -8,6 +8,7 @@
     "moduleResolution": "Node",
     "module": "ES6",
     "target": "ES6",
+    "lib": ["es2019", "dom"],
     "downlevelIteration": true,
     "strict": true,
     "esModuleInterop": true

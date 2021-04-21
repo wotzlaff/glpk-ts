@@ -14,6 +14,14 @@ export interface ModelProperties {
   sense?: 'min' | 'max'
 }
 
+interface VariableArray {
+  [key: string]: Variable
+}
+
+interface VariablePropertiesArray {
+  [key: string]: VariableProperties
+}
+
 export class Model {
   readonly ptr: ModelPtr
   private _vars: Variable[] = []
@@ -101,12 +109,18 @@ export class Model {
 
   addVars(vars: number, props?: VariableProperties): Variable[]
   addVars(vars: VariableProperties[]): Variable[]
+  addVars(vars: VariablePropertiesArray): VariableArray
 
-  addVars(vars: number | VariableProperties[], props?: VariableProperties): Variable[] {
+  addVars(
+    vars: number | VariableProperties[] | VariablePropertiesArray,
+    props?: VariableProperties
+  ): Variable[] | VariableArray {
     if (Number.isInteger(vars)) {
       return this.addVarsByCount(<number>vars, props)
-    } else {
+    } else if (Array.isArray(vars)) {
       return this.addVarsByProperties(<VariableProperties[]>vars)
+    } else {
+      return this.addVarsFromPropertiesArray(<VariablePropertiesArray>vars)
     }
   }
 
@@ -136,6 +150,23 @@ export class Model {
         )
     )
     this._vars = this._vars.concat(vars)
+    return vars
+  }
+
+  private addVarsFromPropertiesArray(props: VariablePropertiesArray): VariableArray {
+    const n = Object.keys(props).length
+    const idx0 = mod._glp_add_cols(this.ptr, n)
+    const vars = Object.fromEntries(
+      Object.entries(props).map(([key, prop], offset) => [
+        key,
+        new Variable(
+          this,
+          idx0 + offset,
+          prop.name ? Object.assign({}, prop, { name: `${prop.name}[${key}]` }) : prop
+        ),
+      ])
+    )
+    this._vars = this._vars.concat(Object.values(vars))
     return vars
   }
 
