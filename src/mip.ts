@@ -147,8 +147,7 @@ export namespace MIP {
       mod.setValue(<number>param + 96, opts.heuristicFP ? 1 : 0, 'i32')
     opts.heuristicPS !== undefined &&
       mod.setValue(<number>param + 100, opts.heuristicPS ? 1 : 0, 'i32')
-    opts.limitProxy !== undefined &&
-      mod.setValue(<number>param + 104, opts.limitProxy ? 1 : 0, 'i32')
+    opts.limitProxy !== undefined && mod.setValue(<number>param + 104, opts.limitProxy, 'i32')
     opts.heuristicRound !== undefined &&
       mod.setValue(<number>param + 108, opts.heuristicRound ? 1 : 0, 'i32')
     return param
