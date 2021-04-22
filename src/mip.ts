@@ -2,7 +2,7 @@ import { Model } from './model'
 import { mod } from './module'
 import { Const } from './enums'
 import { getMessageLevel, MessageLevel } from './msglevel'
-import Tree from './tree'
+import { Tree } from './tree'
 import { IOCPPtr, TreePtr } from 'glpk-wasm'
 
 export namespace MIP {
@@ -18,7 +18,17 @@ export namespace MIP {
     driebeck_tomlin: Const.BranchingTechnique.DTH,
     hybrid_pseudocost: Const.BranchingTechnique.PCH,
   }
-  type BranchingTechnique = keyof typeof BranchingTechniques
+  export type BranchingTechnique =  // keyof typeof BranchingTechniques
+    | 'ffv'
+    | 'lfv'
+    | 'mfv'
+    | 'dth'
+    | 'pch'
+    | 'first_fractional'
+    | 'last_fractional'
+    | 'most_fractional'
+    | 'driebeck_tomlin'
+    | 'hybrid_pseudocost'
 
   const BacktrackingTechniques = {
     dfs: Const.BacktrackingTechnique.DFS,
@@ -30,14 +40,22 @@ export namespace MIP {
     best_bound: Const.BacktrackingTechnique.BLB,
     best_projection: Const.BacktrackingTechnique.BPH,
   }
-  type BacktrackingTechnique = keyof typeof BacktrackingTechniques
+  export type BacktrackingTechnique =  // keyof typeof BacktrackingTechniques
+    | 'dfs'
+    | 'bfs'
+    | 'blb'
+    | 'bph'
+    | 'depth_first'
+    | 'breadth_first'
+    | 'best_bound'
+    | 'best_projection'
 
   const PreprocessingTechniques = {
     none: Const.PreprocessingTechnique.NONE,
     root: Const.PreprocessingTechnique.ROOT,
     all: Const.PreprocessingTechnique.ALL,
   }
-  type PreprocessingTechnique = keyof typeof PreprocessingTechniques
+  export type PreprocessingTechnique = 'all' | 'none' | 'root' // keyof typeof PreprocessingTechniques
 
   export interface Options {
     msgLevel?: MessageLevel
@@ -105,10 +123,12 @@ export namespace MIP {
     const param = <IOCPPtr>mod._malloc(328)
     mod._glp_init_iocp(param)
     let tmp
-    opts.msgLevel !== undefined && mod.setValue(param, getMessageLevel(opts.msgLevel), 'i32')
+    opts.msgLevel !== undefined &&
+      mod.setValue(param, getMessageLevel(opts.msgLevel), 'i32')
     if (opts.branching !== undefined) {
       tmp = BranchingTechniques[opts.branching]
-      if (tmp === undefined) throw new Error(`unknown branching technique '${opts.branching}'`)
+      if (tmp === undefined)
+        throw new Error(`unknown branching technique '${opts.branching}'`)
       mod.setValue(<number>param + 4, tmp, 'i32')
     }
     if (opts.backtracking !== undefined) {
@@ -117,11 +137,16 @@ export namespace MIP {
         throw new Error(`unknown backtracking technique '${opts.backtracking}'`)
       mod.setValue(<number>param + 8, tmp, 'i32')
     }
-    opts.tolInt !== undefined && mod.setValue(<number>param + 16, opts.tolInt, 'double')
-    opts.tolObj !== undefined && mod.setValue(<number>param + 24, opts.tolObj, 'double')
-    opts.limitTime !== undefined && mod.setValue(<number>param + 32, opts.limitTime, 'i32')
-    opts.logFreq !== undefined && mod.setValue(<number>param + 36, opts.logFreq, 'i32')
-    opts.logDelay !== undefined && mod.setValue(<number>param + 40, opts.logDelay, 'i32')
+    opts.tolInt !== undefined &&
+      mod.setValue(<number>param + 16, opts.tolInt, 'double')
+    opts.tolObj !== undefined &&
+      mod.setValue(<number>param + 24, opts.tolObj, 'double')
+    opts.limitTime !== undefined &&
+      mod.setValue(<number>param + 32, opts.limitTime, 'i32')
+    opts.logFreq !== undefined &&
+      mod.setValue(<number>param + 36, opts.logFreq, 'i32')
+    opts.logDelay !== undefined &&
+      mod.setValue(<number>param + 40, opts.logDelay, 'i32')
     if (opts.callbackPtr !== undefined) {
       mod.setValue(<number>param + 44, <number>opts.callbackPtr, '*')
     }
@@ -130,24 +155,32 @@ export namespace MIP {
     if (opts.preprocessing !== undefined) {
       tmp = PreprocessingTechniques[opts.preprocessing]
       if (tmp === undefined)
-        throw new Error(`unknown preprocessing technique '${opts.preprocessing}'`)
+        throw new Error(
+          `unknown preprocessing technique '${opts.preprocessing}'`
+        )
       mod.setValue(<number>param + 56, tmp, 'i32')
     }
     // padding + 4
-    opts.gapMIP !== undefined && mod.setValue(<number>param + 64, opts.gapMIP, 'double')
-    opts.cutsMIR !== undefined && mod.setValue(<number>param + 72, opts.cutsMIR ? 1 : 0, 'i32')
+    opts.gapMIP !== undefined &&
+      mod.setValue(<number>param + 64, opts.gapMIP, 'double')
+    opts.cutsMIR !== undefined &&
+      mod.setValue(<number>param + 72, opts.cutsMIR ? 1 : 0, 'i32')
     opts.cutsGomory !== undefined &&
       mod.setValue(<number>param + 76, opts.cutsGomory ? 1 : 0, 'i32')
-    opts.cutsCover !== undefined && mod.setValue(<number>param + 80, opts.cutsCover ? 1 : 0, 'i32')
+    opts.cutsCover !== undefined &&
+      mod.setValue(<number>param + 80, opts.cutsCover ? 1 : 0, 'i32')
     opts.cutsClique !== undefined &&
       mod.setValue(<number>param + 84, opts.cutsClique ? 1 : 0, 'i32')
-    opts.presolve !== undefined && mod.setValue(<number>param + 88, opts.presolve ? 1 : 0, 'i32')
-    opts.binarize !== undefined && mod.setValue(<number>param + 92, opts.binarize ? 1 : 0, 'i32')
+    opts.presolve !== undefined &&
+      mod.setValue(<number>param + 88, opts.presolve ? 1 : 0, 'i32')
+    opts.binarize !== undefined &&
+      mod.setValue(<number>param + 92, opts.binarize ? 1 : 0, 'i32')
     opts.heuristicFP !== undefined &&
       mod.setValue(<number>param + 96, opts.heuristicFP ? 1 : 0, 'i32')
     opts.heuristicPS !== undefined &&
       mod.setValue(<number>param + 100, opts.heuristicPS ? 1 : 0, 'i32')
-    opts.limitProxy !== undefined && mod.setValue(<number>param + 104, opts.limitProxy, 'i32')
+    opts.limitProxy !== undefined &&
+      mod.setValue(<number>param + 104, opts.limitProxy, 'i32')
     opts.heuristicRound !== undefined &&
       mod.setValue(<number>param + 108, opts.heuristicRound ? 1 : 0, 'i32')
     return param
@@ -157,7 +190,10 @@ export namespace MIP {
     // prepare option struct
     if (opts.callback !== undefined) {
       const callback = opts.callback
-      opts.callbackPtr = mod.addFunction((treePtr: TreePtr) => callback(new Tree(treePtr)), 'vii')
+      opts.callbackPtr = mod.addFunction(
+        (treePtr: TreePtr) => callback(new Tree(treePtr)),
+        'vii'
+      )
     }
     const param = createStruct(opts || {})
     const retCode = mod._glp_intopt(model.ptr, param)

@@ -1,7 +1,7 @@
 import { mod } from './module'
 import { TreePtr } from 'glpk-wasm'
 import { Const } from './enums'
-import Model from './model'
+import { Model } from './model'
 
 const ReasonCodes = {
   row: Const.ReasonCode.ROWGEN,
@@ -12,17 +12,19 @@ const ReasonCodes = {
   select: Const.ReasonCode.SELECT,
   preprocessing: Const.ReasonCode.PREPRO,
 }
-type ReasonCode = keyof typeof ReasonCodes
-const ReverseReasonCodes = new Map(Object.entries(ReasonCodes).map(([k, v]) => [v, <ReasonCode>k]))
+export type ReasonCode = keyof typeof ReasonCodes
+const ReverseReasonCodes = new Map(
+  Object.entries(ReasonCodes).map(([k, v]) => [v, <ReasonCode>k])
+)
 
-const RowOriginFlags = {
-  regular: Const.RowOriginFlag.REG,
-  lazy: Const.RowOriginFlag.LAZY,
-  cut: Const.RowOriginFlag.CUT,
+const RowOrigins = {
+  regular: Const.RowOrigin.REG,
+  lazy: Const.RowOrigin.LAZY,
+  cut: Const.RowOrigin.CUT,
 }
-type RowOriginFlag = keyof typeof RowOriginFlags
-const ReverseRowOriginFlags = new Map(
-  Object.entries(RowOriginFlags).map(([k, v]) => [v, <RowOriginFlag>k])
+export type RowOrigin = keyof typeof RowOrigins
+const ReverseRowOrigins = new Map(
+  Object.entries(RowOrigins).map(([k, v]) => [v, <RowOrigin>k])
 )
 
 const RowClasses = {
@@ -31,23 +33,25 @@ const RowClasses = {
   cover: Const.RowClass.COV,
   clique: Const.RowClass.CLQ,
 }
-type RowClass = keyof typeof RowClasses
-const ReverseRowClasses = new Map(Object.entries(RowClasses).map(([k, v]) => [v, <RowClass>k]))
+export type RowClass = keyof typeof RowClasses
+const ReverseRowClasses = new Map(
+  Object.entries(RowClasses).map(([k, v]) => [v, <RowClass>k])
+)
 
 const BranchSelections = {
   down: Const.BranchSelection.DN_BRNCH,
   up: Const.BranchSelection.UP_BRNCH,
   general: Const.BranchSelection.NO_BRNCH,
 }
-type BranchSelection = keyof typeof BranchSelections
+export type BranchSelection = keyof typeof BranchSelections
 
-interface Attribute {
+export interface Attribute {
   level: number
-  origin: RowOriginFlag
+  origin: RowOrigin
   cls: RowClass
 }
 
-interface TreeSize {
+export interface TreeSize {
   active: number
   current: number
   total: number
@@ -124,8 +128,12 @@ export class Tree {
     mod._glp_ios_row_attr(this.ptr, idx, Tree._data)
     return {
       level: mod.getValue(<number>Tree._data + 0, 'i32'),
-      origin: <RowOriginFlag>ReverseRowOriginFlags.get(mod.getValue(<number>Tree._data + 4, 'i32')),
-      cls: <RowClass>ReverseRowClasses.get(mod.getValue(<number>Tree._data + 8, 'i32')),
+      origin: <RowOrigin>(
+        ReverseRowOrigins.get(mod.getValue(<number>Tree._data + 4, 'i32'))
+      ),
+      cls: <RowClass>(
+        ReverseRowClasses.get(mod.getValue(<number>Tree._data + 8, 'i32'))
+      ),
     }
   }
 
@@ -136,7 +144,11 @@ export class Tree {
   setHeuristicSolution(solution: number[] | Float64Array) {
     const size = solution.length
     const targetPtr = mod._malloc(size * 8)
-    const targetArray = new Float64Array(mod.HEAPU8.buffer, <number>targetPtr, size)
+    const targetArray = new Float64Array(
+      mod.HEAPU8.buffer,
+      <number>targetPtr,
+      size
+    )
     if (solution instanceof Float64Array) {
       solution.set(targetArray)
     } else {
@@ -154,7 +166,8 @@ export class Tree {
 
   branchUpon(idx: number, select: BranchSelection) {
     const selectValue = BranchSelections[select]
-    if (selectValue === undefined) throw new Error(`unknown branch selection '${select}'`)
+    if (selectValue === undefined)
+      throw new Error(`unknown branch selection '${select}'`)
     mod._glp_ios_branch_upon(this.ptr, idx, selectValue)
   }
 
@@ -208,5 +221,3 @@ export class Tree {
     mod._glp_ios_clear_pool(this.ptr)
   }
 }
-
-export default Tree

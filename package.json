@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "rollup -c"
+    "build": "rollup -c",
+    "build:doc": "typedoc"
   },
   "keywords": [],
   "author": "Nico Strasdat <nstrasdat@gmail.com>",

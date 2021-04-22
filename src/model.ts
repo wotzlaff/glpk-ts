@@ -1,8 +1,8 @@
 import { Const } from './enums'
 
 import { mod, ModelPtr } from './module'
-import Variable, { VariableProperties } from './variable'
-import Constraint, { ConstraintProperties } from './constraint'
+import { Variable, VariableProperties } from './variable'
+import { Constraint, ConstraintProperties } from './constraint'
 
 import { getStatus, StatusSimplex, StatusInterior, StatusMIP } from './status'
 import { Interior } from './interior'
@@ -146,14 +146,18 @@ export class Model {
         new Variable(
           this,
           idx0 + offset,
-          props && props.name ? { ...props, name: `${props.name}_${offset}` } : props
+          props && props.name
+            ? { ...props, name: `${props.name}_${offset}` }
+            : props
         )
     )
     this._vars = this._vars.concat(vars)
     return vars
   }
 
-  private addVarsFromPropertiesArray(props: VariablePropertiesArray): VariableArray {
+  private addVarsFromPropertiesArray(
+    props: VariablePropertiesArray
+  ): VariableArray {
     const n = Object.keys(props).length
     const idx0 = mod._glp_add_cols(this.ptr, n)
     const vars = Object.fromEntries(
@@ -162,7 +166,9 @@ export class Model {
         new Variable(
           this,
           idx0 + offset,
-          prop.name ? Object.assign({}, prop, { name: `${prop.name}[${key}]` }) : prop
+          prop.name
+            ? Object.assign({}, prop, { name: `${prop.name}[${key}]` })
+            : prop
         ),
       ])
     )
@@ -173,7 +179,10 @@ export class Model {
   addConstrs(constrs: number): Constraint[]
   addConstrs(constrs: ConstraintProperties[]): Constraint[]
 
-  addConstrs(constrs: number | ConstraintProperties[], props?: ConstraintProperties): Constraint[] {
+  addConstrs(
+    constrs: number | ConstraintProperties[],
+    props?: ConstraintProperties
+  ): Constraint[] {
     if (Number.isInteger(constrs)) {
       return this.addConstrsByCount(<number>constrs, props)
     } else {
@@ -190,12 +199,17 @@ export class Model {
 
   private addConstrsByProperties(props: ConstraintProperties[]): Constraint[] {
     const idx0 = mod._glp_add_rows(this.ptr, props.length)
-    const constrs = props.map((v, offset) => new Constraint(this, idx0 + offset, v))
+    const constrs = props.map(
+      (v, offset) => new Constraint(this, idx0 + offset, v)
+    )
     this._constrs = this._constrs.concat(constrs)
     return constrs
   }
 
-  private addConstrsByCount(n: number, props?: ConstraintProperties): Constraint[] {
+  private addConstrsByCount(
+    n: number,
+    props?: ConstraintProperties
+  ): Constraint[] {
     const idx0 = mod._glp_add_rows(this.ptr, n)
     const constrs = Array.from(
       Array(n).keys(),
@@ -203,7 +217,9 @@ export class Model {
         new Constraint(
           this,
           idx0 + offset,
-          props && props.name ? { ...props, name: `${props.name}_${offset}` } : props
+          props && props.name
+            ? { ...props, name: `${props.name}_${offset}` }
+            : props
         )
     )
     this._constrs = this._constrs.concat(constrs)
@@ -217,14 +233,19 @@ export class Model {
   }
 
   get sense(): 'min' | 'max' {
-    return mod._glp_get_obj_dir(this.ptr) === Const.ObjectiveDirection.MIN ? 'min' : 'max'
+    return mod._glp_get_obj_dir(this.ptr) === Const.ObjectiveDirection.MIN
+      ? 'min'
+      : 'max'
   }
 
   set sense(sense: 'min' | 'max') {
-    if (sense !== 'min' && sense !== 'max') throw new Error(`unknown sense '${sense}'`)
+    if (sense !== 'min' && sense !== 'max')
+      throw new Error(`unknown sense '${sense}'`)
     mod._glp_set_obj_dir(
       this.ptr,
-      sense === 'min' ? Const.ObjectiveDirection.MIN : Const.ObjectiveDirection.MAX
+      sense === 'min'
+        ? Const.ObjectiveDirection.MIN
+        : Const.ObjectiveDirection.MAX
     )
   }
 
@@ -310,5 +331,3 @@ export class Model {
     }
   }
 }
-
-export default Model

@@ -9,7 +9,11 @@ export type Status =
   | 'undefined'
 
 export type StatusSimplex = Status
-export type StatusInterior = 'undefined' | 'optimal' | 'infeasible' | 'no_feasible'
+export type StatusInterior =
+  | 'undefined'
+  | 'optimal'
+  | 'infeasible'
+  | 'no_feasible'
 export type StatusMIP = 'undefined' | 'optimal' | 'feasible' | 'no_feasible'
 
 const STATUS2RAW = new Map<Status, Const.Status>([

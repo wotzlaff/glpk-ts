@@ -27,7 +27,9 @@ const VARIABLETYPE2RAW = new Map<VariableType | undefined, Const.VariableType>([
   ['binary', Const.VariableType.BINARY],
 ])
 
-const RAW2VARIABLETYPE = new Map(Array.from(VARIABLETYPE2RAW.entries(), ([k, v]) => [v, k]))
+const RAW2VARIABLETYPE = new Map(
+  Array.from(VARIABLETYPE2RAW.entries(), ([k, v]) => [v, k])
+)
 
 function getVariableType(type?: VariableType): Const.VariableType {
   const res = VARIABLETYPE2RAW.get(type)
@@ -35,15 +37,22 @@ function getVariableType(type?: VariableType): Const.VariableType {
   return res
 }
 
-export type VariableStatus = 'basic' | 'lower-bound' | 'upper-bound' | 'free' | 'fixed'
+export type VariableStatus =
+  | 'basic'
+  | 'lower-bound'
+  | 'upper-bound'
+  | 'free'
+  | 'fixed'
 
-export const VARIABLESTATUS2RAW = new Map<VariableStatus, Const.VariableStatus>([
-  ['basic', Const.VariableStatus.BASIC],
-  ['lower-bound', Const.VariableStatus.LB],
-  ['upper-bound', Const.VariableStatus.UB],
-  ['free', Const.VariableStatus.FREE],
-  ['fixed', Const.VariableStatus.FIXED],
-])
+export const VARIABLESTATUS2RAW = new Map<VariableStatus, Const.VariableStatus>(
+  [
+    ['basic', Const.VariableStatus.BASIC],
+    ['lower-bound', Const.VariableStatus.LB],
+    ['upper-bound', Const.VariableStatus.UB],
+    ['free', Const.VariableStatus.FREE],
+    ['fixed', Const.VariableStatus.FIXED],
+  ]
+)
 
 export const RAW2VARIABLESTATUS = new Map(
   Array.from(VARIABLESTATUS2RAW.entries(), ([k, v]) => [v, k])
@@ -134,7 +143,9 @@ export class Variable {
   }
 
   get type(): VariableType {
-    return <VariableType>RAW2VARIABLETYPE.get(mod._glp_get_col_kind(this.ptr, this._idx))
+    return <VariableType>(
+      RAW2VARIABLETYPE.get(mod._glp_get_col_kind(this.ptr, this._idx))
+    )
   }
 
   get value(): number {
@@ -158,8 +169,8 @@ export class Variable {
   }
 
   get status(): VariableStatus {
-    return <VariableStatus>RAW2VARIABLESTATUS.get(mod._glp_get_col_stat(this.ptr, this._idx))
+    return <VariableStatus>(
+      RAW2VARIABLESTATUS.get(mod._glp_get_col_stat(this.ptr, this._idx))
+    )
   }
 }
-
-export default Variable

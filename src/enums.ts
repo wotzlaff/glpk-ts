@@ -149,7 +149,7 @@ export namespace Const {
     UP_BRNCH = 2, // select up-branch
   }
 
-  export enum RowOriginFlag {
+  export enum RowOrigin {
     //row origin flag
     REG = 0, // regular constraint
     LAZY = 1, // "lazy" constraint
