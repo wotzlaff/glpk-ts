@@ -1,0 +1,33 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the action will run. 
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install desired Node.js version
+        uses: actions/setup-node@v2-beta
+        with:
+          node-version: '14'
+      - run: 'npm install'
+      - run: 'npm run build'
+      - run: 'npm run build:doc'
+      - name: publish to surge
+        uses: bevry-actions/surge@v1.0.3
+        with:
+          surgeLogin: '${{ secrets.SURGE_LOGIN }}'
+          surgeToken: '${{ secrets.SURGE_TOKEN }}'
