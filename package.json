@@ -6,10 +6,12 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "rollup -c",
-    "build:doc": "typedoc"
+    "build:doc": "typedoc",
+    "publish:doc": "surge ./docs glpk-ts.surge.sh"
   },
   "keywords": [],
   "author": "Nico Strasdat <nstrasdat@gmail.com>",
+  "repository": "github:wotzlaff/glpk-ts",
   "license": "GLP-3.0",
   "devDependencies": {
     "@rollup/plugin-commonjs": "^18.0.0",
