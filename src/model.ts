@@ -27,6 +27,14 @@ export class Model {
   private _vars: Variable[] = []
   private _constrs: Constraint[] = []
 
+  get vars(): readonly Variable[] {
+    return this._vars
+  }
+
+  get constrs(): readonly Constraint[] {
+    return this._constrs
+  }
+
   constructor(props?: ModelProperties) {
     if (mod === undefined) throw new Error('wasm module not loaded')
     this.ptr = mod._glp_create_prob()
