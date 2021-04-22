@@ -338,4 +338,47 @@ export class Model {
         throw new Error('unknown status')
     }
   }
+
+  get ray(): Variable | Constraint {
+    const k = mod._glp_get_unbnd_ray(this.ptr)
+    if (k === 0) throw new Error('no unbounded ray')
+    if (k <= this.numConstrs) {
+      return this._constrs[k - 1]
+    } else {
+      return this._vars[k - 1 - this.numConstrs]
+    }
+  }
+
+  getTableau(formatNumber?: (v: number) => string): string {
+    const format =
+      formatNumber === undefined
+        ? (formatNumber = v => v.toString())
+        : formatNumber
+    return [
+      ...[...this.vars, ...this.constrs]
+        .filter(v => v.status === 'basic')
+        .map(
+          v =>
+            v.name +
+            ' = ' +
+            [
+              ...v.row.map(
+                ([u, val]) =>
+                  `${format(u instanceof Variable ? val : -val)} ${u.name}`
+              ),
+              format(v.value),
+            ].join(' + ')
+        ),
+      'z = ' +
+        [
+          ...[...this.vars, ...this.constrs]
+            .filter(v => v.status !== 'basic')
+            .map(
+              v =>
+                `${format(v instanceof Variable ? v.dual : -v.dual)} ${v.name}`
+            ),
+          format(this.value),
+        ].join(' + '),
+    ].join('\n')
+  }
 }

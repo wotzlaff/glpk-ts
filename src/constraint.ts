@@ -2,6 +2,7 @@ import { mod, ModelPtr } from './module'
 import { Model } from './model'
 import { getBoundType } from './bounds'
 import { Variable, VariableStatus, RAW2VARIABLESTATUS } from './variable'
+import { evalTabRow, evalTabColumn } from './eval-tab'
 
 export type CoefficientList = Array<[Variable, number]> | Map<Variable, number>
 
@@ -15,7 +16,7 @@ export interface ConstraintProperties {
 export class Constraint {
   private _needsUpdate = false
 
-  private model: Model
+  readonly model: Model
   private _idx: number
   private _lb?: number = 0.0
   private _ub?: number = 0.0
@@ -92,11 +93,11 @@ export class Constraint {
       throw new Error('variable should have type Variable')
     }
     if (!c) return this
-    const value = (this._coeffs.get(v._idx) || 0) + c
+    const value = (this._coeffs.get(v.id) || 0) + c
     if (!value) {
-      this._coeffs.delete(v._idx)
+      this._coeffs.delete(v.id)
     } else {
-      this._coeffs.set(v._idx, value)
+      this._coeffs.set(v.id, value)
     }
     this._needsUpdate = true
     return this
@@ -117,11 +118,11 @@ export class Constraint {
         throw new Error('variable should have type Variable')
       }
       if (!c) continue
-      const value = (this._coeffs.get(v._idx) || 0) + c
+      const value = (this._coeffs.get(v.id) || 0) + c
       if (!value) {
-        this._coeffs.delete(v._idx)
+        this._coeffs.delete(v.id)
       } else {
-        this._coeffs.set(v._idx, value)
+        this._coeffs.set(v.id, value)
       }
       this._needsUpdate = true
     }
@@ -176,5 +177,13 @@ export class Constraint {
     return <VariableStatus>(
       RAW2VARIABLESTATUS.get(mod._glp_get_row_stat(this.ptr, this._idx))
     )
+  }
+
+  get row(): [Variable | Constraint, number][] {
+    return evalTabRow(this)
+  }
+
+  get column(): [Variable | Constraint, number][] {
+    return evalTabColumn(this)
   }
 }

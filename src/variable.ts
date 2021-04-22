@@ -2,6 +2,8 @@ import { mod, ModelPtr } from './module'
 import { Model } from './model'
 import { getBoundType } from './bounds'
 import { Const } from './enums'
+import type { Constraint } from './constraint'
+import { evalTabRow, evalTabColumn } from './eval-tab'
 
 export type VariableType =
   | 'c'
@@ -67,10 +69,10 @@ export interface VariableProperties {
 }
 
 export class Variable {
-  model: Model
-  _idx: number
-  _lb: number | undefined = 0.0
-  _ub: number | undefined = 0.0
+  readonly model: Model
+  private _idx: number
+  private _lb: number | undefined = 0.0
+  private _ub: number | undefined = 0.0
 
   private get ptr(): ModelPtr {
     return this.model.ptr
@@ -86,6 +88,10 @@ export class Variable {
     this.setBounds(lb, ub)
     if (type !== undefined) this.type = type
     if (name !== undefined) this.name = name
+  }
+
+  get id() {
+    return this._idx
   }
 
   private setBounds(lb?: number, ub?: number) {
@@ -172,5 +178,13 @@ export class Variable {
     return <VariableStatus>(
       RAW2VARIABLESTATUS.get(mod._glp_get_col_stat(this.ptr, this._idx))
     )
+  }
+
+  get row(): [Variable | Constraint, number][] {
+    return evalTabRow(this)
+  }
+
+  get column(): [Variable | Constraint, number][] {
+    return evalTabColumn(this)
   }
 }
