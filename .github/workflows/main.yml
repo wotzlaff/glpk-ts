@@ -17,7 +17,11 @@ jobs:
         uses: actions/setup-node@v2-beta
         with:
           node-version: '14'
-      - run: 'npm install'
-      - run: 'npm run build'
-      - run: 'npm run build:doc'
-      - run: 'npm run publish:doc'
+      - run: npm install
+      - run: npm run build
+      - run: npm run build:doc
+      - name: Publish on surge
+        run: npm run publish:doc
+        env:
+          SURGE_LOGIN: ${{ secrets.SURGE_LOGIN }}
+          SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
