@@ -189,8 +189,9 @@ export class Model {
     )
   }
 
-  addConstrs(constrs: number): Constraint[]
-  addConstrs(constrs: ConstraintProperties[]): Constraint[]
+  addConstrs(count: number): Constraint[]
+  addConstrs(props: ConstraintProperties[]): Constraint[]
+  addConstrs(count: number, props: ConstraintProperties): Constraint[]
 
   addConstrs(constrs: number | ConstraintProperties[], props?: ConstraintProperties): Constraint[] {
     if (Number.isInteger(constrs)) {
