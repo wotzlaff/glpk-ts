@@ -1,7 +1,7 @@
 import { Model } from './model'
 import { mod } from './module'
 import { getMessageLevel, MessageLevel } from './msglevel'
-import { Const } from 'enums'
+import { Const } from './enums'
 
 export namespace Interior {
   export type OrderingAlgorithm = 'none' | 'qmd' | 'amd' | 'symamd'
