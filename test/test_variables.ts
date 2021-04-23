@@ -58,6 +58,44 @@ describe('Model', () => {
     expect(b.p.name).to.equal('b[p]')
     expect(b.q.name).to.equal('b[q]')
     expect([b.q.lb, b.q.ub, b.q.obj, b.q.type]).to.eql([5, 9, 42, 'integer'])
+
+    const c = model.addVars({
+      one: { lb: 0, ub: 5, obj: 1 },
+      two: { ub: 1, obj: 2, type: 'i' },
+    })
+    expect(model.numVars).to.equal(3 + 2 + 2 + 2 + 2)
+    expect(model.vars).to.eql([
+      ...x,
+      ...y,
+      ...Object.values(a),
+      ...Object.values(b),
+      ...Object.values(c),
+    ])
+    expect(c.one.id).to.equal(3 + 2 + 2 + 2 + 1)
+
+    expect(c.one).to.be.instanceOf(Variable)
+    expect(c.two).to.be.instanceOf(Variable)
+    expect([c.one.lb, c.one.ub, c.one.obj, c.one.type]).to.eql([0, 5, 1, 'continuous'])
+    expect([c.two.lb, c.two.ub, c.two.obj, c.two.type]).to.eql([undefined, 1, 2, 'integer'])
+
+    const d = model.addVars([
+      { lb: 0, ub: 5, obj: 1 },
+      { ub: 1, obj: 2, type: 'i' },
+    ])
+    expect(model.numVars).to.equal(3 + 2 + 2 + 2 + 2 + 2)
+    expect(model.vars).to.eql([
+      ...x,
+      ...y,
+      ...Object.values(a),
+      ...Object.values(b),
+      ...Object.values(c),
+      ...d,
+    ])
+
+    expect(d[0]).to.be.instanceOf(Variable)
+    expect(d[1]).to.be.instanceOf(Variable)
+    expect([d[0].lb, d[0].ub, d[0].obj, d[0].type]).to.eql([0, 5, 1, 'continuous'])
+    expect([d[1].lb, d[1].ub, d[1].obj, d[1].type]).to.eql([undefined, 1, 2, 'integer'])
   })
 
   it('should count binary and integer variables', () => {

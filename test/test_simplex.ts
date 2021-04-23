@@ -10,7 +10,7 @@ describe('simplex', () => {
     const model = new Model()
     expect(model.sense).to.equal('min')
 
-    const x = model.addVars(2, { lb: 0, obj: 1 })
+    const x = model.addVars(2, { lb: 0, obj: 1, name: 'x' })
 
     const s0 = model.addConstr()
     s0.setBounds(1, 1)
@@ -63,13 +63,17 @@ describe('simplex', () => {
     expect(x[0].status).to.equal('basic')
     expect(x[1].status).to.equal('lower-bound')
     expect(s0.status).to.equal('fixed')
+
+    expect(model.solution).to.equal('status = optimal\nx_0 = 1\nx_1 = 0\nvalue = 1')
+
+    expect(() => model.ray).to.throw(Error, 'no unbounded ray')
   })
 
   it('should solve another simple problem', () => {
     const model = new Model({ sense: 'max' })
     expect(model.sense).to.equal('max')
 
-    const x = model.addVars(2, { lb: 0, obj: 1 })
+    const x = model.addVars(2, { lb: 0, obj: 1, name: 'x' })
 
     const s0 = model.addConstr({
       ub: 1,
@@ -97,21 +101,71 @@ describe('simplex', () => {
     expect(x[0].status).to.equal('basic')
     expect(x[1].status).to.equal('lower-bound')
     expect(s0.status).to.equal('upper-bound')
+
+    expect(model.solution).to.equal('status = optimal\nx_0 = 1\nx_1 = 0\nvalue = 1')
   })
 
   it('should be able to detect unboundedness', () => {
     const model = new Model({ sense: 'max' })
     const x = model.addVar({ obj: 0.1 })
 
-    const code = model.simplex({ msgLevel: 'off' })
+    const code = model.simplex({ msgLevel: 'off', method: 'primal' })
     expect(code).to.equal('ok')
     expect(model.status).to.equal('unbounded')
     expect(model.statusPrimal).to.equal('feasible')
     expect(model.statusDual).to.equal('no_feasible')
+    expect(model.ray).to.equal(x)
+    expect(model.solution).to.equal('problem is unbounded')
+  })
+
+  it('should be able to detect infeasibility', () => {
+    const model = new Model()
+    const x = model.addVar({ lb: 1, obj: 0.1 })
+    const c = model.addConstr({ ub: 0, coeffs: [[x, 1]] })
+
+    const code = model.simplex({ msgLevel: 'off', method: 'dual' })
+    expect(code).to.equal('ok')
+    expect(model.status).to.equal('no_feasible')
+    expect(model.statusPrimal).to.equal('no_feasible')
+    expect(model.statusDual).to.equal('feasible')
+    expect(model.ray).to.equal(c)
+    expect(model.solution).to.equal('problem has no feasible solution')
+  })
+
+  it('should accept all options', () => {
+    const model = new Model()
+    const x = model.addVars(2, { lb: 0, obj: 1, name: 'x' })
+    model.addConstr({
+      ub: 1,
+      coeffs: [
+        [x[0], 1],
+        [x[1], 2],
+      ],
+    })
+
+    model.simplex({
+      msgLevel: 'off',
+      method: 'dual_primal',
+      pricing: 'pse',
+      ratioTest: 'flipflop',
+      tolPrimal: 1e-6,
+      tolDual: 1e-5,
+      tolPivot: 1e-8,
+      objLower: -25,
+      objUpper: 25,
+      limitIter: 100,
+      limitTime: 1000,
+      logFreq: 1,
+      logDelay: 0,
+      presolve: true,
+    })
   })
 
   it('should not accept bad options', () => {
     const model = new Model()
+
+    expect(() => model.solution).to.throw(Error, "status is 'undefined', run simplex first")
+
     // @ts-ignore
     expect(() => model.simplex({ msgLevel: 'none' })).to.throw(
       Error,
@@ -121,6 +175,13 @@ describe('simplex', () => {
     expect(() => model.simplex({ method: 'primaldual' })).to.throw(
       Error,
       "unknown method 'primaldual'"
+    )
+    // @ts-ignore
+    expect(() => model.simplex({ pricing: 'random' })).to.throw(Error, "unknown pricing 'random'")
+    // @ts-ignore
+    expect(() => model.simplex({ ratioTest: 'random' })).to.throw(
+      Error,
+      "unknown ratioTest 'random'"
     )
   })
 })
