@@ -115,21 +115,24 @@ export class Model {
     return <StatusMIP>getStatus(stat)
   }
 
-  addVars(vars: number, props?: VariableProperties): Variable[]
-  addVars(vars: VariableProperties[]): Variable[]
-  addVars(vars: VariablePropertiesObject): VariableObject
+  addVars(count: number, props?: VariableProperties): Variable[]
+  addVars(keys: string[], props?: VariableProperties): VariableObject
+  addVars(props: VariableProperties[]): Variable[]
+  addVars(props: VariablePropertiesObject): VariableObject
 
   addVars(
-    vars: number | VariableProperties[] | VariablePropertiesObject,
+    vars: number | VariableProperties[] | VariablePropertiesObject | string[],
     props?: VariableProperties
   ): Variable[] | VariableObject {
     if (Number.isInteger(vars)) {
       return this.addVarsByCount(<number>vars, props)
     } else if (Array.isArray(vars)) {
+      if (vars.length === 0 || typeof vars[0] === 'string') {
+        return this.addVarsByKeys(vars, props)
+      }
       return this.addVarsByProperties(<VariableProperties[]>vars)
-    } else {
-      return this.addVarsFromPropertiesArray(<VariablePropertiesObject>vars)
     }
+    return this.addVarsFromPropertiesArray(<VariablePropertiesObject>vars)
   }
 
   addVar(props?: VariableProperties): Variable {
@@ -161,21 +164,21 @@ export class Model {
     return vars
   }
 
-  private addVarsFromPropertiesArray(props: VariablePropertiesObject): VariableObject {
-    const n = Object.keys(props).length
-    const idx0 = mod._glp_add_cols(this.ptr, n)
-    const vars = Object.fromEntries(
-      Object.entries(props).map(([key, prop], offset) => [
-        key,
-        new Variable(
-          this,
-          idx0 + offset,
-          prop.name ? Object.assign({}, prop, { name: `${prop.name}[${key}]` }) : prop
-        ),
-      ])
+  private addVarsByKeys(keys: string[], props?: VariableProperties): VariableObject {
+    return Object.fromEntries(
+      this.addVarsByCount(keys.length, props).map((v, i) => {
+        return [keys[i], v]
+      })
     )
-    this._vars = this._vars.concat(Object.values(vars))
-    return vars
+  }
+
+  private addVarsFromPropertiesArray(props: VariablePropertiesObject): VariableObject {
+    const keys = [...Object.keys(props)]
+    return Object.fromEntries(
+      this.addVarsByProperties(Object.values(props)).map((v, i) => {
+        return [keys[i], v]
+      })
+    )
   }
 
   addConstrs(constrs: number): Constraint[]
