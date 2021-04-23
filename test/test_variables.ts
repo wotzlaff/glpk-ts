@@ -3,7 +3,7 @@ import { Model, loadModule, Variable } from '../src/index'
 
 before(() => loadModule())
 
-describe('Model', () => {
+describe('Variable', () => {
   it('should add simple variables', () => {
     const model = new Model()
     const x = model.addVar()
