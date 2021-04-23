@@ -143,6 +143,25 @@ describe('simplex', () => {
       ],
     })
 
+    model.simplex()
+
+    model.simplex({
+      msgLevel: 'off',
+      method: 'dual_primal',
+      pricing: 'pse',
+      ratioTest: 'flipflop',
+      tolPrimal: 1e-6,
+      tolDual: 1e-5,
+      tolPivot: 1e-8,
+      objLower: -25,
+      objUpper: 25,
+      limitIter: 100,
+      limitTime: 1000,
+      logFreq: 1,
+      logDelay: 0,
+      presolve: false,
+    })
+
     model.simplex({
       msgLevel: 'off',
       method: 'dual_primal',
