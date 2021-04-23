@@ -145,7 +145,7 @@ export namespace Simplex {
 
   export function solve(model: Model, opts: Options): ReturnCode {
     // write options struct
-    const param = createStruct(opts || {})
+    const param = createStruct(opts)
     // start simplex method
     const retCode = mod._glp_simplex(model.ptr, param)
     mod._free(param)
@@ -154,7 +154,7 @@ export namespace Simplex {
 
   export function solveExact(model: Model, opts: Options): ReturnCode {
     // write options struct
-    const param = createStruct(opts || {})
+    const param = createStruct(opts)
     // start simplex method
     const retCode = mod._glp_exact(model.ptr, param)
     mod._free(param)
