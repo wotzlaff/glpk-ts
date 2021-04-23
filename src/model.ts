@@ -303,12 +303,12 @@ export class Model {
     switch (this.statusInt) {
       case 'undefined':
       case 'infeasible':
-        throw new Error(`status is '${this.statusInt}', run simplex first`)
+        throw new Error(`status is '${this.statusInt}', run interior first`)
       case 'optimal':
         return [
-          `status = ${this.status}`,
-          ...this._vars.map(v => `${v.name} = ${v.valueInt}`),
-          `value = ${this.valueInt}`,
+          `status = ${this.statusInt}`,
+          ...this._vars.map(v => `${v.name} = ${Number(v.valueInt.toFixed(6))}`),
+          `value = ${Number(this.valueInt.toFixed(6))}`,
         ].join('\n')
       case 'no_feasible':
         return 'problem has no feasible solution'
@@ -321,11 +321,11 @@ export class Model {
   get solutionMIP(): string {
     switch (this.statusMIP) {
       case 'undefined':
-        throw new Error(`status is '${this.statusInt}', run simplex first`)
+        throw new Error(`status is '${this.statusMIP}', run intopt first`)
       case 'feasible':
       case 'optimal':
         return [
-          `status = ${this.status}`,
+          `status = ${this.statusMIP}`,
           ...this._vars.map(v => `${v.name} = ${v.valueMIP}`),
           `value = ${this.valueMIP}`,
         ].join('\n')
