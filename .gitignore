@@ -2,5 +2,4 @@ dist
 node_modules
 *.tgz
 docs
-coverage
 .nyc_output

@@ -22,3 +22,11 @@ loadModule().then(() => {
   console.log(`x = ${x.value}, y = ${y.value}`)
 })
 ```
+
+## Documentation
+
+[Documentation](https://glpk-ts.surge.sh)
+
+## Coverage report
+
+You can find the report [here](https://glpk-ts.surge.sh/coverage).

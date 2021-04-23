@@ -17,6 +17,7 @@
     "text",
     "text-summary"
   ],
+  "report-dir": "docs/coverage",
   "all": true,
   "instrument": true
 }
