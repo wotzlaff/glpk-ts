@@ -60,7 +60,7 @@ export namespace Simplex {
       harris: Const.RatioTest.HAR,
       flipflop: Const.RatioTest.FLIP,
     }[rtest]
-    if (res === undefined) throw new Error(`unknown rtest '${rtest}'`)
+    if (res === undefined) throw new Error(`unknown ratioTest '${rtest}'`)
     return res
   }
 
