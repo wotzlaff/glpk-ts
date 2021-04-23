@@ -262,6 +262,11 @@ export class Model {
     return Simplex.solve(this, opts || {})
   }
 
+  exact(opts?: Simplex.Options): Simplex.ReturnCode {
+    this.update()
+    return Simplex.solveExact(this, opts || {})
+  }
+
   interior(opts?: Interior.Options): Interior.ReturnCode {
     this.update()
     return Interior.solve(this, opts || {})
@@ -288,6 +293,7 @@ export class Model {
         return 'problem is unbounded'
       case 'no_feasible':
         return 'problem has no feasible solution'
+      /* istanbul ignore next */
       default:
         throw new Error('unknown status')
     }
@@ -306,6 +312,7 @@ export class Model {
         ].join('\n')
       case 'no_feasible':
         return 'problem has no feasible solution'
+      /* istanbul ignore next */
       default:
         throw new Error('unknown status')
     }
@@ -324,6 +331,7 @@ export class Model {
         ].join('\n')
       case 'no_feasible':
         return 'problem has no feasible solution'
+      /* istanbul ignore next */
       default:
         throw new Error('unknown status')
     }
