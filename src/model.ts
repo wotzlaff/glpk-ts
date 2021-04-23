@@ -40,16 +40,21 @@ export class Model {
     this.ptr = mod._glp_create_prob()
     if (props === undefined) return
     const { name, sense } = props
-    if (name !== undefined) {
-      const maxLen = 4 * name.length + 1
-      const namePtr = mod._malloc(maxLen)
-      mod.stringToUTF8(name, namePtr, maxLen)
-      mod._glp_set_prob_name(this.ptr, namePtr)
-      mod._free(namePtr)
-    }
-    if (sense !== undefined) {
-      this.sense = sense
-    }
+    if (name !== undefined) this.name = name
+    if (sense !== undefined) this.sense = sense
+  }
+
+  set name(name: string) {
+    const strLen = mod.lengthBytesUTF8(name) + 1
+    const namePtr = mod._malloc(strLen)
+    mod.stringToUTF8(name, namePtr, strLen)
+    mod._glp_set_prob_name(this.ptr, namePtr)
+    mod._free(namePtr)
+  }
+
+  get name(): string {
+    const namePtr = mod._glp_get_prob_name(this.ptr)
+    return mod.UTF8ToString(namePtr)
   }
 
   static fromPointer(ptr: ModelPtr): Model {
