@@ -105,11 +105,7 @@ export class Constraint {
 
   private addCollection(coeffs: CoefficientList): Constraint {
     const iter =
-      coeffs instanceof Array
-        ? coeffs
-        : coeffs instanceof Map
-        ? coeffs.entries()
-        : undefined
+      coeffs instanceof Array ? coeffs : coeffs instanceof Map ? coeffs.entries() : undefined
     if (iter === undefined) {
       throw new Error('coeffs should have type Array or Map')
     }
@@ -174,9 +170,7 @@ export class Constraint {
   }
 
   get status(): VariableStatus {
-    return <VariableStatus>(
-      RAW2VARIABLESTATUS.get(mod._glp_get_row_stat(this.ptr, this._idx))
-    )
+    return <VariableStatus>RAW2VARIABLESTATUS.get(mod._glp_get_row_stat(this.ptr, this._idx))
   }
 
   get row(): [Variable | Constraint, number][] {
