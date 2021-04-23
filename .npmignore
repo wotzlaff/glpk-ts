@@ -4,3 +4,5 @@ src
 tsconfig.json
 rollup.config.js
 docs
+coverage
+.nyc_output
