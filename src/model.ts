@@ -128,7 +128,7 @@ export class Model {
       return this.addVarsByCount(<number>vars, props)
     } else if (Array.isArray(vars)) {
       if (vars.length === 0 || typeof vars[0] === 'string') {
-        return this.addVarsByKeys(vars, props)
+        return this.addVarsByKeys(<string[]>vars, props)
       }
       return this.addVarsByProperties(<VariableProperties[]>vars)
     }
@@ -165,10 +165,13 @@ export class Model {
   }
 
   private addVarsByKeys(keys: string[], props?: VariableProperties): VariableObject {
-    return Object.fromEntries(
-      this.addVarsByCount(keys.length, props).map((v, i) => {
-        return [keys[i], v]
-      })
+    const { name, ...remProps } = props || {}
+    return this.addVarsFromPropertiesArray(
+      Object.fromEntries(
+        keys.map(key => {
+          return [key, { ...remProps, name: `${name}[${key}]` }]
+        })
+      )
     )
   }
 
