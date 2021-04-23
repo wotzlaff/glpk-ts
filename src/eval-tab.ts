@@ -2,9 +2,7 @@ import { mod } from './module'
 import { Constraint } from './constraint'
 import { Variable } from './variable'
 
-export function evalTabRow(
-  v: Variable | Constraint
-): [Variable | Constraint, number][] {
+export function evalTabRow(v: Variable | Constraint): [Variable | Constraint, number][] {
   const m = v.model.numConstrs
   const n = v.model.numVars
   const mem = mod._malloc((n + 1) * (8 + 4))
@@ -20,7 +18,7 @@ export function evalTabRow(
   )
 
   const res = Array.from(
-    idxs.slice(1),
+    idxs.slice(1).filter(idx => idx > 0),
     (idx, i) =>
       <[Variable | Constraint, number]>[
         idx <= m ? v.model.constrs[idx - 1] : v.model.vars[idx - 1 - m],
@@ -32,9 +30,7 @@ export function evalTabRow(
   return res
 }
 
-export function evalTabColumn(
-  v: Variable | Constraint
-): [Variable | Constraint, number][] {
+export function evalTabColumn(v: Variable | Constraint): [Variable | Constraint, number][] {
   const m = v.model.numConstrs
   const mem = mod._malloc((m + 1) * (8 + 4))
 
@@ -49,7 +45,7 @@ export function evalTabColumn(
   )
 
   const res = Array.from(
-    idxs.slice(1),
+    idxs.slice(1).filter(idx => idx > 0),
     (idx, i) =>
       <[Variable | Constraint, number]>[
         idx <= m ? v.model.constrs[idx - 1] : v.model.vars[idx - 1 - m],
