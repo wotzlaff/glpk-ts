@@ -1,11 +1,6 @@
 export { loadModule } from './module'
-export { Model, ModelProperties } from './model'
-export {
-  Variable,
-  VariableType,
-  VariableStatus,
-  VariableProperties,
-} from './variable'
+export { Model, ModelProperties, VariableObject, VariablePropertiesObject } from './model'
+export { Variable, VariableType, VariableStatus, VariableProperties } from './variable'
 export { Constraint, ConstraintProperties, CoefficientList } from './constraint'
 
 export { Simplex } from './simplex'
