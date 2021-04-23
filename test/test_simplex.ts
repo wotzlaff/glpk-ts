@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { Model, loadModule } from '../src/index'
+import { Model, loadModule, Variable } from '../src/index'
 
 before(() => loadModule())
 
@@ -178,6 +178,27 @@ describe('simplex', () => {
       logDelay: 0,
       presolve: true,
     })
+  })
+
+  it('should stop on limit', () => {
+    const model = new Model()
+    const n = 100
+    const x = model.addVars(n, { obj: -1 })
+    model.addConstrs(
+      Array.from(Array(n).keys(), j => {
+        return { lb: 0, ub: 1, coeffs: x.map((xi, i) => <[Variable, number]>[xi, i == j ? 2 : 1]) }
+      })
+    )
+
+    expect(model.simplex({ msgLevel: 'off', limitIter: 1 })).to.equal('iteration_limit')
+    expect(model.simplex({ msgLevel: 'off', limitTime: 10 })).to.equal('time_limit')
+  })
+
+  it('should detect incorrect bounds', () => {
+    const model = new Model()
+    model.addVar()
+    model.addConstr({ lb: 1, ub: 0 })
+    expect(model.simplex({ msgLevel: 'off' })).to.equal('bounds_incorrect')
   })
 
   it('should not accept bad options', () => {
