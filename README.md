@@ -2,7 +2,7 @@
 
 We aim to provide an easy-to-use interface to [GLPK](https://www.gnu.org/software/glpk/) which works out of the box.
 Of course, Javascript is not the best choice for a modeling language.
-Nevertheless it might be a suitable alternative for some applications because it runs on almost any machine (in the browser) without dditional dependencies and setup.
+Nevertheless it might be a suitable alternative for some applications because it runs on almost any machine (in the browser) without additional dependencies and setup.
 
 ## Installation
 
