@@ -191,7 +191,7 @@ describe('simplex', () => {
     )
 
     expect(model.simplex({ msgLevel: 'off', limitIter: 1 })).to.equal('iteration_limit')
-    expect(model.simplex({ msgLevel: 'off', limitTime: 10 })).to.equal('time_limit')
+    expect(model.simplex({ msgLevel: 'off', limitTime: 1 })).to.equal('time_limit')
   })
 
   it('should detect incorrect bounds', () => {
