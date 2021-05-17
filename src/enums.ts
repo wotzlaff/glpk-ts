@@ -162,4 +162,9 @@ export namespace Const {
     COV = 3, // mixed cover cut
     CLQ = 4, // clique cut
   }
+
+  export enum MPSFormat {
+    DECK = 1, // fixed (ancient)
+    FILE = 2, // free (modern)
+  }
 }

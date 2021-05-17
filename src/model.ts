@@ -258,6 +258,38 @@ export class Model {
     return mod.FS.readFile(fname, { encoding: 'utf8' })
   }
 
+  static fromModelLP(data: string): Model {
+    const model = new Model()
+    const fname = '_tmp.mps'
+    mod.FS.writeFile(fname, data)
+    const fnamePtr = mod._malloc(fname.length + 1)
+    mod.stringToUTF8(fname, fnamePtr, fname.length + 1)
+    mod._glp_read_lp(model.ptr, 0, fnamePtr)
+    mod._free(fnamePtr)
+    return model
+  }
+
+  toMPS(): string {
+    this.update()
+    const fname = '_tmp.mps'
+    const fnamePtr = mod._malloc(fname.length + 1)
+    mod.stringToUTF8(fname, fnamePtr, fname.length + 1)
+    mod._glp_write_mps(this.ptr, Const.MPSFormat.FILE, 0, fnamePtr)
+    mod._free(fnamePtr)
+    return mod.FS.readFile(fname, { encoding: 'utf8' })
+  }
+
+  static fromMPS(data: string): Model {
+    const model = new Model()
+    const fname = '_tmp.mps'
+    mod.FS.writeFile(fname, data)
+    const fnamePtr = mod._malloc(fname.length + 1)
+    mod.stringToUTF8(fname, fnamePtr, fname.length + 1)
+    mod._glp_read_mps(model.ptr, Const.MPSFormat.FILE, 0, fnamePtr)
+    mod._free(fnamePtr)
+    return model
+  }
+
   simplex(opts?: Simplex.Options): Simplex.ReturnCode {
     this.update()
     return Simplex.solve(this, opts || {})
