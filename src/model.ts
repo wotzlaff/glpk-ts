@@ -279,14 +279,16 @@ export class Model {
     return mod.FS.readFile(fname, { encoding: 'utf8' })
   }
 
-  static fromMPS(data: string): Model {
+  static fromMPS(data: string, format?: 'deck' | 'file'): Model {
     const model = new Model()
     const fname = '_tmp.mps'
     mod.FS.writeFile(fname, data)
     const fnamePtr = mod._malloc(fname.length + 1)
     mod.stringToUTF8(fname, fnamePtr, fname.length + 1)
-    mod._glp_read_mps(model.ptr, Const.MPSFormat.FILE, 0, fnamePtr)
+    const fmt = format === 'deck' ? Const.MPSFormat.DECK : Const.MPSFormat.FILE
+    const status = mod._glp_read_mps(model.ptr, fmt, 0, fnamePtr)
     mod._free(fnamePtr)
+    if (status !== 0) throw new Error('mps reading failed')
     return model
   }
 
