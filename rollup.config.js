@@ -13,5 +13,5 @@ export default {
     },
   },
   external: ['glpk-wasm'],
-  plugins: [typescript(), resolve(), commonjs()],
+  plugins: [typescript({ tsconfig: './tsconfig.json' }), resolve(), commonjs()],
 }
