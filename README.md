@@ -146,6 +146,8 @@ If you have any idea why NodeJS is performing so great, please give me a hint.
 
 ## Applications
 
+- [Factoriolab](https://factoriolab.github.io/) (Angular-based calculator for factory games like Factorio and Dyson Sphere Program)
+
 Let me know if you are planning to use `glpk-ts` for your application.
 
 ## Coverage report
