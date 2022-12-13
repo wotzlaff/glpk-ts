@@ -18,8 +18,8 @@ export class Constraint {
 
   readonly model: Model
   private _idx: number
-  private _lb?: number = 0.0
-  private _ub?: number = 0.0
+  private _lb?: number
+  private _ub?: number
   private _coeffs: Map<number, number>
 
   private get ptr(): ModelPtr {
