@@ -1,6 +1,6 @@
 {
   "name": "glpk-ts",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -14,7 +14,7 @@
   "keywords": [],
   "author": "Nico Strasdat <nstrasdat@gmail.com>",
   "repository": "github:wotzlaff/glpk-ts",
-  "license": "GLP-3.0",
+  "license": "GPL-3.0-or-later",
   "devDependencies": {
     "@rollup/plugin-commonjs": "^18.0.0",
     "@rollup/plugin-node-resolve": "^11.2.1",
