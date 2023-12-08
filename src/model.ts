@@ -258,14 +258,40 @@ export class Model {
     return mod.FS.readFile(fname, { encoding: 'utf8' })
   }
 
+  _refreshVariables() {
+    const n_cols = mod._glp_get_num_cols(this.ptr)
+    this._vars = Array.from(
+      Array(n_cols).keys(),
+      idx =>
+        new Variable(this, idx + 1, {
+          lb: mod._glp_get_col_lb(this.ptr, idx + 1),
+          ub: mod._glp_get_col_ub(this.ptr, idx + 1)
+        })
+    )
+  }
+
+  _refreshConstraints() {
+    const n_rows = mod._glp_get_num_rows(this.ptr)
+    this._constrs = Array.from(
+      Array(n_rows).keys(),
+      idx =>
+        new Constraint(this, idx + 1, {
+          lb: mod._glp_get_row_lb(this.ptr, idx + 1),
+          ub: mod._glp_get_row_ub(this.ptr, idx + 1)
+        })
+    )
+  }
+
   static fromModelLP(data: string): Model {
     const model = new Model()
-    const fname = '_tmp.mps'
+    const fname = '_tmp.lp'
     mod.FS.writeFile(fname, data)
     const fnamePtr = mod._malloc(fname.length + 1)
     mod.stringToUTF8(fname, fnamePtr, fname.length + 1)
     mod._glp_read_lp(model.ptr, 0, fnamePtr)
     mod._free(fnamePtr)
+    model._refreshVariables()
+    model._refreshConstraints()
     return model
   }
 
@@ -289,6 +315,8 @@ export class Model {
     const status = mod._glp_read_mps(model.ptr, fmt, 0, fnamePtr)
     mod._free(fnamePtr)
     if (status !== 0) throw new Error('mps reading failed')
+    model._refreshVariables()
+    model._refreshConstraints()
     return model
   }
 
